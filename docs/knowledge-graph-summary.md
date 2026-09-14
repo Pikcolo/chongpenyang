@@ -416,8 +416,8 @@ LIMIT 60;
 ```
 
 ```cypher
-// 1.3 เจาะจงดูเมนูใดเมนูหนึ่งแบบครบวงจร (ตัวอย่าง: "กาแฟส้ม")
-MATCH (b:Beverage {name: 'กาแฟส้ม (Orange Coffee / Espresso Orange)'})
+// 1.3 เจาะจงดูเมนูใดเมนูหนึ่งแบบครบวงจร (ตัวอย่าง: "คาปูชิโน่เย็น")
+MATCH (b:Beverage {name: 'คาปูชิโน่เย็น (Iced Cappuccino)'})
 OPTIONAL MATCH (b)-[r1:USES_INGREDIENT]->(i:Ingredient)
 OPTIONAL MATCH (b)-[r2:USES_EQUIPMENT]->(eq:Equipment)
 OPTIONAL MATCH (b)-[r3:HAS_STEP]->(st:RecipeStep)

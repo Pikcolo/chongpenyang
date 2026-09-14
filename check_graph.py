@@ -47,10 +47,10 @@ with driver.session() as session:
     for r in rel_res:
         print(f"  • {r['relationshipType']}: {r['count']}")
 
-    print("\n--- Sample Query: Recipe for กาแฟส้ม (Orange Coffee) ---")
-    q_orange = """
+    print("\n--- Sample Query: Recipe for คาปูชิโน่เย็น (Iced Cappuccino) ---")
+    q_cappuccino = """
     MATCH (b:Beverage)
-    WHERE b.name CONTAINS 'ส้ม'
+    WHERE b.name CONTAINS 'คาปูชิโน่เย็น'
     OPTIONAL MATCH (b)-[ri:USES_INGREDIENT]->(i:Ingredient)
     OPTIONAL MATCH (b)-[:USES_EQUIPMENT]->(eq:Equipment)
     OPTIONAL MATCH (b)-[:HAS_STEP]->(st:RecipeStep)
@@ -62,7 +62,7 @@ with driver.session() as session:
            collect(DISTINCT eq.name) AS equipment,
            collect(DISTINCT toString(st.step_number) + '. ' + st.action) AS steps
     """
-    res = session.run(q_orange).single()
+    res = session.run(q_cappuccino).single()
     if res:
         print(f"Beverage: {res['beverage']} ({res['category']})")
         print(f"Roast: {res['roast']}")
