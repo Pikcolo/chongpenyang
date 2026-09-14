@@ -57,50 +57,60 @@ graph TD
 
 ---
 
-## 🎨 3. คำสั่ง Cypher สำหรับแสดงกราฟ (Visualization Queries)
-> 💡 *นำคำสั่งด้านล่างไปวางใน Neo4j Browser แล้วกด Run จะได้ผลลัพธ์เป็นลูกกลมกราฟสีสวยงาม นำไปแคปภาพใส่สไลด์ได้ทันที*
-
-### 1) กราฟภาพรวมทั้งระบบ (Overview Cluster)
-*แสดงคลัสเตอร์ความสัมพันธ์หลักในฐานข้อมูลทั้งหมด (จำกัด 100 เส้น เพื่อความสวยงาม ไม่แน่นเกินไป)*
-```cypher
-MATCH (n)-[r]->(m)
-RETURN n, r, m
-LIMIT 100;
-```
+## 🎨 3. คำสั่ง Cypher สำหรับแสดงกราฟแยกตามหมวดหมู่ (Module-based Visualization Queries)
+> 💡 *นำคำสั่งด้านล่างไปวางใน Neo4j Browser (`http://localhost:7474`) แล้วกด Run จะได้ผลลัพธ์เป็นลูกกลมกราฟสีสวยงาม นำไปแคปภาพใส่สไลด์ได้ทันที*
 
 ---
 
-### 2) กราฟสูตรเครื่องดื่ม SOP (Beverage Recipe Subgraph)
-*แสดงเมนูกาแฟ พร้อมแตกกิ่งไปยัง วัตถุดิบ, อุปกรณ์, และขั้นตอนการชง 1, 2, 3...*
-```cypher
-MATCH (b:Beverage)-[r]->(target)
-WHERE b.name CONTAINS 'ส้ม' OR b.name CONTAINS 'ลาเต้'
-RETURN b, r, target;
-```
-*(หากต้องการดูทุกเมนูพร้อมกัน ให้ลบบรรทัด `WHERE ...` ออก)*
+### ☕ หมวดที่ 1: ความรู้เบื้องต้นเกี่ยวกับเมล็ดกาแฟ (หน้า 3–19)
 
----
-
-### 3) กราฟสายพันธุ์กาแฟและการแปรรูป (Coffee Species & Varieties)
-*แสดงสายพันธุ์กาแฟ อาราบิก้า / โรบัสต้า / พีเบอร์รี่ แตกกิ่งไปยังสายพันธุ์ย่อย*
+#### 1.1) สายพันธุ์กาแฟและการแตกสายพันธุ์ย่อย (Species & Varieties)
+*แสดงสายพันธุ์หลัก (Arabica, Robusta, Peaberry) เชื่อมโยงไปยังสายพันธุ์ย่อย (เช่น Typica, Bourbon, Geisha)*
 ```cypher
 MATCH (s:Species)-[r:HAS_VARIETY]->(v:Variety)
 RETURN s, r, v;
 ```
 
----
-
-### 4) กราฟเชื่อมโยงเมนูกับวิทยาศาสตร์การสกัด (Extraction Science & Recipes)
-*แสดงความเชื่อมโยงระหว่างเมนูเครื่องดื่มกับมาตรฐานการสกัดกาแฟ (Perfect/Under/Over)*
+#### 1.2) 10 ขั้นตอนเส้นทางกาแฟจากต้นสู่แก้ว (From Tree to Cup Pipeline)
+*แสดงลำดับขั้นตอนการผลิต 1 $\rightarrow$ 2 $\rightarrow$ ... $\rightarrow$ 10 ที่ร้อยเรียงด้วยเส้น `PRECEDES`*
 ```cypher
-MATCH (b:Beverage)-[r:STRIVES_FOR]->(ex:ExtractionStatus)
-RETURN b, r, ex;
+MATCH (p1:ProductionStep)-[r:PRECEDES]->(p2:ProductionStep)
+RETURN p1, r, p2;
+```
+
+#### 1.3) ระดับการคั่วกาแฟและเบอร์บด (Roast Levels & Grind Sizing)
+*แสดงระดับการคั่ว (ค่า Agtron) และขนาดการบดคู่กับอุปกรณ์ที่เหมาะสม*
+```cypher
+MATCH (r:RoastLevel)
+OPTIONAL MATCH (g:GrindSize)
+RETURN r, g;
 ```
 
 ---
 
-### 5) กราฟศาสตร์ลาเต้อาร์ตและเทคนิค (Latte Art & Techniques)
-*แสดงโหนดลาเต้อาร์ต แตกกิ่งไปยังเทคนิค Free Pour และ Etching รวมถึงเครื่องดื่มที่เกี่ยวข้อง*
+### 🔬 หมวดที่ 2: วิทยาศาสตร์การสกัดและการวินิจฉัยปัญหา (หน้า 20–31)
+
+#### 2.1) แผนภูมิวินิจฉัยการสกัดสมบูรณ์ vs สกัดน้อย/มากเกินไป (Diagnostic Decision Tree)
+*แสดงสถานะการสกัด (Perfect, Under, Over) เชื่อมโยงไปยัง **สาเหตุ (Causes)** และ **วิธีแก้ไข (Solutions)***
+```cypher
+MATCH (st:ExtractionStatus)-[rc:CAUSED_BY]->(c:ExtractionCause)
+OPTIONAL MATCH (st)-[rs:RESOLVED_BY]->(s:ExtractionSolution)
+RETURN st, rc, c, rs, s;
+```
+
+#### 2.2) เจาะจงดูเฉพาะกรณี Under Extraction (สกัดน้อยเกินไป - รสเปรี้ยวโดด)
+```cypher
+MATCH (st:ExtractionStatus {status: 'Under Extraction (สกัดน้อยเกินไป)'})-[rc:CAUSED_BY]->(c:ExtractionCause)
+OPTIONAL MATCH (st)-[rs:RESOLVED_BY]->(s:ExtractionSolution)
+RETURN st, rc, c, rs, s;
+```
+
+---
+
+### 🎨 หมวดที่ 3: ศาสตร์ของลาเต้อาร์ตและเทคนิคการเท (หน้า 32–36)
+
+#### 3.1) คลัสเตอร์ลาเต้อาร์ต เทคนิค และเมนูที่เกี่ยวข้อง
+*แสดงโหนด Latte Art แตกกิ่งไปยังเทคนิค (Free Pour, Etching) และเมนูเครื่องดื่มที่ต้องใช้ศิลปะฟองนม*
 ```cypher
 MATCH (la:LatteArt)-[r:HAS_TECHNIQUE]->(t:LatteArtTechnique)
 OPTIONAL MATCH (b:Beverage)-[rb:APPLIES_TECHNIQUE]->(la)
@@ -109,32 +119,69 @@ RETURN la, r, t, b, rb;
 
 ---
 
-### 6) กราฟโครงสร้างหลักสูตรและโมดูล (Document & Module Hierarchy)
-*แสดงเล่มเอกสารแม่ แตกกิ่งเป็น 5 โมดูลหลักสูตร และเชื่อมโยงไปยังเมนูในแต่ละโมดูล*
-```cypher
-MATCH (d:Document)-[r1:HAS_MODULE]->(m:Module)
-OPTIONAL MATCH (m)-[r2:HAS_RECIPE]->(b:Beverage)
-RETURN d, r1, m, r2, b;
-```
+### 📋 หมวดที่ 4: ใบขั้นตอน SOP และสูตรเครื่องดื่มมาตรฐาน 13 เมนู (หน้า 37–50)
 
----
-
-### 7) กราฟลำดับขั้นตอนการชง SOP (Sequential Recipe Flow)
-*แสดงเมนูเชื่อมต่อกับ Step 1 -> Step 2 -> Step 3 เป็น Workflow*
+#### 4.1) กราฟสูตรเมนูเดี่ยวแบบครบวงจร (เจาะจงเฉพาะเมนู เช่น "กาแฟส้ม")
+*แสดงเมนูเชื่อมไปยัง วัตถุดิบ, อุปกรณ์, ขั้นตอนการชง 1 $\rightarrow$ 2 $\rightarrow$ 3..., ระดับการคั่ว และเบอร์บด*
 ```cypher
-MATCH (b:Beverage)-[:HAS_STEP]->(s:RecipeStep)
+MATCH (b:Beverage)
 WHERE b.name CONTAINS 'ส้ม'
-OPTIONAL MATCH (s)-[r:NEXT_STEP]->(next_s:RecipeStep)
-RETURN b, s, r, next_s;
+MATCH (b)-[r]->(target)
+OPTIONAL MATCH (target)-[r_next:NEXT_STEP]->(next_step:RecipeStep)
+RETURN b, r, target, r_next, next_step;
+```
+*(💡 สามารถเปลี่ยน `'ส้ม'` เป็นชื่อเมนูอื่น เช่น `'เอสเพรสโซ'`, `'ลาเต้'`, `'คาปูชิโน'`, `'มอคค่า')*
+
+#### 4.2) กราฟเปรียบเทียบเมนูกาแฟร้อน vs กาแฟเย็น (Menu Categories)
+*แสดงเมนูทั้งหมด 13 เมนู แยกคลัสเตอร์ระหว่าง Hot Coffee และ Cold Coffee เชื่อมโยงไปยังวัตถุดิบ*
+```cypher
+MATCH (b:Beverage)-[r:USES_INGREDIENT]->(i:Ingredient)
+RETURN b, r, i
+LIMIT 50;
+```
+
+#### 4.3) โฟลว์ขั้นตอนการปฏิบัติงาน SOP (Step-by-Step Flow) ของทุกเมนู
+*แสดงเฉพาะลำดับขั้นตอนการชงที่เชื่อมต่อกันด้วย `NEXT_STEP`*
+```cypher
+MATCH (s1:RecipeStep)-[r:NEXT_STEP]->(s2:RecipeStep)
+RETURN s1, r, s2
+LIMIT 30;
 ```
 
 ---
 
-### 8) กราฟวิเคราะห์ปัญหาการสกัด (Diagnostic Tree: ปัญหา -> สาเหตุ -> วิธีแก้)
-*แสดงสถานะ Under/Over Extraction แตกกิ่งไปยังโหนดสาเหตุและวิธีแก้ไขเฉพาะจุด*
+### 📝 หมวดที่ 5: แบบทดสอบและแบบประเมินบาริสต้า (หน้า 51–53)
+
+#### 5.1) โครงสร้างใบทดสอบความรู้บาริสต้า (Barista Quiz & Evaluation)
+*แสดงโมดูลที่ 5 เชื่อมไปยังโจทย์ข้อสอบและเกณฑ์การประเมินความรู้*
 ```cypher
-MATCH (ex:ExtractionStatus)-[r1:CAUSED_BY]->(c:ExtractionCause)
-OPTIONAL MATCH (ex)-[r2:RESOLVED_BY]->(s:ExtractionSolution)
-RETURN ex, r1, c, r2, s;
+MATCH (m:Module {id: 'MOD_05'})-[r:HAS_QUIZ]->(q:QuizQuestion)
+RETURN m, r, q;
 ```
+
+---
+
+### 🌐 ภาพรวมเชิงโครงสร้างเอกสารและระบบรวม (Macro Structure & Full Graph)
+
+#### 1) โครงสร้างเอกสาร: เอกสารหลัก $\rightarrow$ 5 โมดูล $\rightarrow$ หน้า PDF
+```cypher
+MATCH (d:Document)-[r1:HAS_MODULE]->(m:Module)-[r2:COVERS_PAGE]->(p:Page)
+RETURN d, m, p
+LIMIT 60;
+```
+
+#### 2) กราฟภาพรวมทั้งระบบ (Overview Cluster)
+*แสดงคลัสเตอร์ความสัมพันธ์หลักในฐานข้อมูลทั้งหมด (จำกัด 100 เส้น เพื่อความสวยงาม ไม่แน่นจนเกินไป)*
+```cypher
+MATCH (n)-[r]->(m)
+RETURN n, r, m
+LIMIT 100;
+```
+
+---
+
+> 💡 **ทริคสำหรับจัดภาพใน Neo4j Browser ให้สวยใส่สไลด์:**
+> 1. **การจัดวาง:** หลังจากกด Run ผลลัพธ์จะแสดงเป็นกราฟ สามารถคลิกค้างที่วงกลมโหนดแล้วลากจัดตำแหน่งให้เป็นทรงพุ่มหรือทรงกิ่งก้านตามใจชอบ
+> 2. **การปรับสีและขนาด:** คลิกที่ชื่อ Label บนแถบพาเนลขวามือใน Neo4j Browser เพื่อเลือกสี (Color) และขนาด (Size) เช่น กำหนดให้ `Beverage` เป็นสีส้ม, `Ingredient` เป็นสีเขียว, `RecipeStep` เป็นสีฟ้าพาสเทล
+> 3. **Export รูปภาพ:** สามารถคลิกปุ่ม **Export PNG** หรือ **SVG** ที่มุมขวาบนของหน้าต่างกราฟใน Neo4j เพื่อนำรูปไปแปะในสไลด์ Canva ได้คมชัด 100%
 
