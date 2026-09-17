@@ -57,12 +57,11 @@
 
 ### 3. Dynamic Top-k & Embedding Optimization (น้ำหนัก 15% — ได้ 4/4 คะแนน)
 
-#### ข้อกำหนดระดับดีเยี่ยม (Production-Grade):
-1. **โมเดล Embedding ที่เหมาะสมกับภาษาไทยและโดเมน**:
-   - ใช้งาน **`BAAI/bge-m3`** (Tri-mode: Dense, Multi-vector, Sparse) ความละเอียด 1,024 มิติ รองรับ Context Window ถึง 8,192 Tokens
-   - มีรายงานการทดลองและเปรียบเทียบเชิงลึกระหว่าง **BGE-M3**, **Multilingual-E5-base** และ **MiniLM-L12-v2** ในเอกสาร: [embedding-models-comparison.md](file:///d:/PIK/y4-1/241-351_AI_for_social/chongpenyang/chatbot/docs/embedding-models-comparison.md)
+1. **การวิเคราะห์ เปรียบเทียบ และเลือกโมเดล Embedding ที่เหมาะสมกับภาษาไทยและโดเมน**:
+   - **โมเดลหลักในระบบ Production (`.env`)**: ใช้งาน **`BAAI/bge-m3`** (Tri-mode: Dense, Multi-vector, Sparse) ความละเอียด 1,024 มิติ รองรับ Context Window ถึง 8,192 Tokens ทำให้เก็บตารางสูตร SOP และความสัมพันธ์ของเอกสารภาษาไทยได้อย่างครบถ้วน
+   - **โมเดลทางเลือกสำหรับอุปกรณ์สเปกจำกัด (Lightweight Edge Deployment)**: รองรับการสลับเป็น `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` ซึ่งแปลงเวกเตอร์ขนาด 384 มิติได้อย่างรวดเร็ว ประหยัดหน่วยความจำ (RAM ~500MB)
+   - **รายงานการทดลองและเปรียบเทียบเชิงลึก**: มีผลการทดสอบเชิงประจักษ์ (Empirical Benchmark) วัดค่า Semantic Margin, Positive/Negative Similarity, และ MRR เปรียบเทียบระหว่าง **BGE-M3**, **Multilingual-E5-base** และ **MiniLM-L12-v2** อย่างละเอียดในเอกสาร: [embedding-models-comparison.md](file:///d:/PIK/y4-1/241-351_AI_for_social/chongpenyang/chatbot/docs/embedding-models-comparison.md)
    - มีรายงานการวิเคราะห์เปรียบเทียบโมเดล LLM กะทัดรัด (Qwen 2.5 3B vs Gemma 2 2B vs Llama 3.2 3B) ในเอกสาร: [llm-selection-and-comparison.md](file:///d:/PIK/y4-1/241-351_AI_for_social/chongpenyang/chatbot/docs/llm-selection-and-comparison.md)
-   - เลือกใช้ `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` ซึ่งรองรับภาษาไทยอย่างเป็นเลิศ (Native Multilingual) และแปลงเวกเตอร์ขนาด 384 มิติได้อย่างแม่นยำ
 2. **Dynamic Top-k Adjustment**:
    - ระบบ `DynamicTopKCalculator` คำนวณค่า $k \in [3, 8]$ แบบ Real-time ตาม:
      - ความยาวของคำถาม (Query Token Length)
