@@ -40,28 +40,17 @@ class BaristaRAGChain:
                 print(f"⚠️ Warning initializing Ollama LLM: {e}")
                 self.llm = None
 
-        # User session memory: { user_id: [ {"role": "user/assistant", "text": "..."}, ... ] }
+        # Stateless design: Do not store or maintain conversational history
         self.conversation_memory: Dict[str, List[Dict[str, str]]] = {}
-        self.max_history_turns = 6
+        self.max_history_turns = 0
 
-    def get_user_history_str(self, session_id: str) -> str:
-        """Formats conversation history for prompt injection."""
-        history = self.conversation_memory.get(session_id, [])
-        if not history:
-            return ""
-        lines = []
-        for msg in history:
-            role = "ผู้ใช้" if msg["role"] == "user" else "บาริสต้า AI"
-            lines.append(f"{role}: {msg['text']}")
-        return "\n".join(lines)
+    def get_user_history_str(self, session_id: str = "") -> str:
+        """Stateless: Always returns empty string."""
+        return ""
 
-    def add_user_history(self, session_id: str, role: str, text: str):
-        """Appends message to session memory."""
-        if session_id not in self.conversation_memory:
-            self.conversation_memory[session_id] = []
-        self.conversation_memory[session_id].append({"role": role, "text": text})
-        if len(self.conversation_memory[session_id]) > self.max_history_turns:
-            self.conversation_memory[session_id] = self.conversation_memory[session_id][-self.max_history_turns:]
+    def add_user_history(self, session_id: str = "", role: str = "", text: str = ""):
+        """Stateless: No-op."""
+        pass
 
     def answer_question(
         self,
@@ -94,8 +83,6 @@ class BaristaRAGChain:
                 "• 🥛 วิทยาศาสตร์การสตีมนมและประวัติศาสตร์ Latte Art\n\n"
                 "วันนี้สนใจสอบถามสูตรหรือข้อมูลเทคนิคด้านใด พิมพ์ถามได้เลยครับ!"
             )
-            self.add_user_history(session_id, "user", question)
-            self.add_user_history(session_id, "assistant", greeting_reply)
             return {
                 "question": question,
                 "answer": greeting_reply,
@@ -114,8 +101,6 @@ class BaristaRAGChain:
         # 2. Pre-generation Guardrail
         is_valid, fallback_msg = self.guardrails.validate_retrieval(contexts, query=question)
         if not is_valid:
-            self.add_user_history(session_id, "user", question)
-            self.add_user_history(session_id, "assistant", fallback_msg)
             return {
                 "question": question,
                 "answer": fallback_msg,
@@ -134,11 +119,9 @@ class BaristaRAGChain:
             context_blocks.append(f"{source_tag}\n{cleaned_content}")
         full_context_str = "\n\n".join(context_blocks)
 
-        history_str = self.get_user_history_str(session_id)
         chat_messages = build_chat_messages(
             query=question,
-            context_text=full_context_str,
-            chat_history=history_str
+            context_text=full_context_str
         )
 
         # 4. Generate with LLM
@@ -151,7 +134,7 @@ class BaristaRAGChain:
             except Exception as e:
                 # Fallback to single string prompt if chat messages format encounters error
                 try:
-                    prompt = format_rag_prompt(question, full_context_str, history_str)
+                    prompt = format_rag_prompt(question, full_context_str)
                     response = self.llm.invoke(prompt)
                     raw_answer = response.content if hasattr(response, "content") else str(response)
                 except Exception as inner_e:
@@ -160,16 +143,24 @@ class BaristaRAGChain:
         # 5. Post-generation Guardrail
         cleaned_answer = self.guardrails.validate_generation(question, raw_answer, contexts)
 
-        # 6. Extract & Attach Citations
-        citations = self.citation_engine.extract_citations(contexts)
+        # Determine if answer is a fallback / guardrail rejection
+        fallback_markers = [
+            self.guardrails.fallback_msg,
+            "ไม่มีระบุในคู่มือ",
+            "ไม่สามารถให้คำตอบนอกเหนือจากเอกสาร",
+            "ไม่มีข้อมูล",
+            "ไม่มีเนื้อหาเกี่ยวกับการเขียนโค้ด",
+            "ไม่มีเมนู",
+            "ไม่มีระบุข้อมูลเกี่ยวกับ"
+        ]
+        is_fallback = any(marker in cleaned_answer for marker in fallback_markers)
+
+        # 6. Extract & Attach Citations (Only attach citations for genuine verified answers from the manual)
+        citations = self.citation_engine.extract_citations(contexts) if not is_fallback else []
         final_answer = cleaned_answer
-        if append_citations and citations and "ไม่มีระบุในคู่มือ" not in cleaned_answer:
+        if append_citations and citations and not is_fallback:
             citation_footer = self.citation_engine.format_markdown_footer(citations)
             final_answer += citation_footer
-
-        # Save to memory
-        self.add_user_history(session_id, "user", question)
-        self.add_user_history(session_id, "assistant", cleaned_answer)
 
         return {
             "question": question,
@@ -178,5 +169,5 @@ class BaristaRAGChain:
             "citations": citations,
             "contexts": contexts,
             "dynamic_k": dynamic_k,
-            "guardrail_triggered": False
+            "guardrail_triggered": is_fallback
         }
