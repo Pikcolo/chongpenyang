@@ -1,6 +1,6 @@
 """
 Citation and Source Reference Engine.
-Formats structured metadata, topics, pages, and excerpts for transparent evidence.
+Formats structured metadata, topics, pages, and excerpts matching user-defined UI layout.
 """
 
 from typing import List, Dict, Any
@@ -24,7 +24,6 @@ class CitationEngine:
             seen.add(key)
 
             snippet = c.get("content", "").strip()
-            # Clean snippet for preview (first 120 chars)
             first_line = snippet.split("\n")[0] if snippet else ""
             preview = (first_line[:120] + "...") if len(first_line) > 120 else first_line
 
@@ -40,15 +39,18 @@ class CitationEngine:
 
     @classmethod
     def format_markdown_footer(cls, citations: List[Dict[str, Any]]) -> str:
-        """Formats citations as an elegant Markdown footnote."""
+        """Formats citations as clean reference lines matching user specifications."""
         if not citations:
             return ""
 
-        lines = ["\n\n📚 **แหล่งอ้างอิงข้อมูล (Citations & Sources):**"]
-        for cite in citations:
+        lines = ["\n\n────────────────────", "📌 **อ้างอิงคู่มือบาริสต้ามืออาชีพ:**"]
+        for cite in citations[:4]:
             page = cite["page"]
             topic = cite["topic"]
-            doc = cite["document"]
-            lines.append(f"• 📖 **หน้า {page}** — *{topic}* ({doc})")
+            # Clean up redundant prefix if already in topic
+            clean_topic = topic.replace("คู่มือประกอบการฝึกอบรม หลักสูตร: บาริสต้ามืออาชีพ", "").strip(" -:")
+            if not clean_topic:
+                clean_topic = "หลักสูตรบาริสต้ามืออาชีพ"
+            lines.append(f"• หน้า {page} - {clean_topic}")
 
         return "\n".join(lines)

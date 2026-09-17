@@ -47,19 +47,30 @@ chatbot/
 │   ├── citation_engine.py         # Structured Source Reference generator
 │   └── rag_chain.py               # Conversational Pipeline with multi-turn memory
 ├── evaluation/                    # Module 5: Quantitative Evaluation
-│   ├── test_dataset.json          # Benchmark 20 Q&A pairs
+│   ├── test_dataset.json          # Benchmark 20 Q&A pairs (Ground Truth)
 │   ├── metrics.py                 # SBERT Cosine Sim, BERTScore, Faithfulness
 │   ├── run_evaluation.py          # Benchmark Runner & Ablation report generator
 │   └── evaluation_results.md      # Auto-generated evaluation report
-├── interfaces/                    # Module 6: User Interfaces
+├── line_ui/                       # LINE Bot Interactive Components
+│   ├── rich_menu.py               # 2500x1686 Custom Art Preprocessor & LINE Payload
+│   ├── quick_replies.py           # Contextual Quick Replies (5 Modules Taxonomy)
+│   ├── flex_carousel.py           # Popular drink recipes carousel flex message
+│   ├── flex_troubleshoot.py       # Under vs Over Extraction diagnostic flex card
+│   └── flex_welcome.py            # Welcome flex message
+├── web/                           # Web Simulator & Real-time RAG Inspector
+│   ├── templates/index.html       # 2-Column Dashboard (Inspector Sidebar + Chat Simulator)
+│   └── static/                    # CSS, JS (Thinking UI & Card layouts), Images
+├── interfaces/                    # Module 6: Server & Webhook Interfaces
 │   ├── app_chat.py                # Interactive CLI Testbench
 │   └── webhook.py                 # LINE Webhook server & REST API (`/query`)
 ├── tests/                         # Unit & Integration test suite
 │   ├── test_ingestion.py
 │   ├── test_hybrid_search.py
 │   └── test_guardrails.py
-└── docs/                          # Integration documentation
-    └── rag-integration-guide.md
+└── docs/                          # Architecture & Integration Guides
+    ├── rag-integration-guide.md
+    ├── llm-selection-and-comparison.md
+    └── rubric-evaluation-checklist.md
 ```
 
 ---
@@ -113,4 +124,4 @@ python -m chatbot.interfaces.webhook
 
 ## 📚 เอกสารเพิ่มเติมที่เกี่ยวข้อง
 - **คู่มือการเชื่อมต่อ LINE Webhook & Cloudflare Tunnel**: [chatbot/docs/rag-integration-guide.md](file:///d:/PIK/y4-1/241-351_AI_for_social/chongpenyang/chatbot/docs/rag-integration-guide.md)
-- **ชุดข้อความทดสอบสำหรับส่งใน LINE (ไฟล์ Excel 20 ข้อ)**: [test_line_queries.xlsx](file:///d:/PIK/y4-1/241-351_AI_for_social/chongpenyang/test_line_queries.xlsx)
+- **ชุดข้อความทดสอบสำหรับส่งใน LINE (ไฟล์ JSON 20 ข้อ)**: [test_line_queries.json](file:///d:/PIK/y4-1/241-351_AI_for_social/chongpenyang/test_line_queries.json)

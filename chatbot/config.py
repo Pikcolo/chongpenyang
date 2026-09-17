@@ -34,17 +34,17 @@ class Settings:
     if not os.path.isabs(PDF_PATH):
         PDF_PATH = str(ROOT_DIR / PDF_PATH)
 
-    # Embedding
+    # Embedding (Default to SOTA BAAI/bge-m3)
     EMBED_MODEL = os.getenv(
         "EMBED_MODEL",
-        yaml_data.get("embedding", {}).get("model_name", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+        yaml_data.get("embedding", {}).get("model_name", "BAAI/bge-m3")
     )
-    EMBED_DEVICE = yaml_data.get("embedding", {}).get("device", "cpu")
+    EMBED_DEVICE = os.getenv("EMBED_DEVICE", yaml_data.get("embedding", {}).get("device", "cpu"))
 
-    # Vector Stores
+    # Vector Stores (FAISS as primary)
     VECTOR_STORE_TYPE = os.getenv(
         "VECTOR_STORE_TYPE",
-        yaml_data.get("vector_store", {}).get("type", "chroma")
+        yaml_data.get("vector_store", {}).get("type", "faiss")
     ).lower()
     
     CHROMA_PATH = os.getenv(
@@ -61,50 +61,61 @@ class Settings:
     if not os.path.isabs(FAISS_PATH):
         FAISS_PATH = str(ROOT_DIR / FAISS_PATH)
 
-    COLLECTION_NAME = yaml_data.get("vector_store", {}).get("collection_name", "barista_rag_collection")
+    COLLECTION_NAME = os.getenv(
+        "COLLECTION_NAME",
+        yaml_data.get("vector_store", {}).get("collection_name", "barista_rag_collection")
+    )
 
     # Fusion
-    FUSION_ALGORITHM = yaml_data.get("fusion", {}).get("algorithm", "rrf")
+    FUSION_ALGORITHM = os.getenv("FUSION_ALGORITHM", yaml_data.get("fusion", {}).get("algorithm", "rrf")).lower()
     RRF_K = int(os.getenv("RRF_K", yaml_data.get("fusion", {}).get("rrf_k", 60)))
     DENSE_WEIGHT = float(os.getenv("DENSE_WEIGHT", yaml_data.get("fusion", {}).get("dense_weight", 0.5)))
     SPARSE_WEIGHT = float(os.getenv("SPARSE_WEIGHT", yaml_data.get("fusion", {}).get("sparse_weight", 0.5)))
 
-    # Re-ranker
-    RERANKER_ENABLED = yaml_data.get("reranker", {}).get("enabled", True)
+    # Re-ranker (can be disabled via RERANKER_ENABLED=false to use Pure RRF / Fusion without extra model)
+    reranker_env = os.getenv("RERANKER_ENABLED")
+    if reranker_env is not None:
+        RERANKER_ENABLED = reranker_env.strip().lower() in ("true", "1", "yes")
+    else:
+        RERANKER_ENABLED = yaml_data.get("reranker", {}).get("enabled", False)
+
     RERANKER_MODEL = os.getenv(
         "RERANKER_MODEL",
-        yaml_data.get("reranker", {}).get("model_name", "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1")
+        yaml_data.get("reranker", {}).get("model_name", "")
     )
-    RERANKER_TOP_N = int(yaml_data.get("reranker", {}).get("top_n", 4))
+    RERANKER_TOP_N = int(os.getenv("RERANKER_TOP_N", yaml_data.get("reranker", {}).get("top_n", 4)))
 
     # Dynamic Optimization
     TOP_K_DEFAULT = int(os.getenv("TOP_K", yaml_data.get("dynamic_optimization", {}).get("default_top_k", 5)))
-    MIN_TOP_K = int(yaml_data.get("dynamic_optimization", {}).get("min_top_k", 3))
-    MAX_TOP_K = int(yaml_data.get("dynamic_optimization", {}).get("max_top_k", 8))
-    MAX_CONTEXT_TOKENS = int(yaml_data.get("dynamic_optimization", {}).get("max_context_tokens", 2200))
+    MIN_TOP_K = int(os.getenv("MIN_TOP_K", yaml_data.get("dynamic_optimization", {}).get("min_top_k", 3)))
+    MAX_TOP_K = int(os.getenv("MAX_TOP_K", yaml_data.get("dynamic_optimization", {}).get("max_top_k", 8)))
+    MAX_CONTEXT_TOKENS = int(os.getenv("MAX_CONTEXT_TOKENS", yaml_data.get("dynamic_optimization", {}).get("max_context_tokens", 2200)))
 
     # LLM
     OLLAMA_MODEL = os.getenv(
         "OLLAMA_MODEL",
-        yaml_data.get("llm", {}).get("model", "qwen2.5:7b")
+        yaml_data.get("llm", {}).get("model", "qwen2.5:3b")
     )
     OLLAMA_BASE_URL = os.getenv(
         "OLLAMA_BASE_URL",
         yaml_data.get("llm", {}).get("base_url", "http://localhost:11434")
     )
-    LLM_TEMPERATURE = float(yaml_data.get("llm", {}).get("temperature", 0.1))
+    LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", yaml_data.get("llm", {}).get("temperature", 0.1)))
 
     # Guardrails
-    STRICT_CONTEXT_CHECK = yaml_data.get("guardrails", {}).get("strict_context_check", True)
-    MIN_SIMILARITY_THRESHOLD = float(yaml_data.get("guardrails", {}).get("min_similarity_threshold", 0.25))
-    FALLBACK_MESSAGE = yaml_data.get(
-        "guardrails", {}
-    ).get("fallback_message", "ขออภัยครับ ข้อมูลดังกล่าวไม่มีระบุในคู่มือบาริสต้ามืออาชีพที่กำหนด ทางเราจึงไม่สามารถให้คำตอบนอกเหนือจากเอกสารได้ครับ")
+    STRICT_CONTEXT_CHECK = os.getenv("STRICT_CONTEXT_CHECK", "true").lower() in ("true", "1", "yes")
+    MIN_SIMILARITY_THRESHOLD = float(os.getenv("MIN_SIMILARITY_THRESHOLD", yaml_data.get("guardrails", {}).get("min_similarity_threshold", 0.05)))
+    FALLBACK_MESSAGE = os.getenv(
+        "FALLBACK_MESSAGE",
+        yaml_data.get(
+            "guardrails", {}
+        ).get("fallback_message", "ขออภัยครับ ข้อมูลดังกล่าวไม่มีระบุในคู่มือบาริสต้ามืออาชีพที่กำหนด ทางเราจึงไม่สามารถให้คำตอบนอกเหนือจากเอกสารได้ครับ")
+    )
 
     # LINE & Server
     CHANNEL_ACCESS_TOKEN = os.getenv("CHANNEL_ACCESS_TOKEN", "")
     CHANNEL_SECRET = os.getenv("CHANNEL_SECRET", "")
     PORT = int(os.getenv("WEBHOOK_PORT", yaml_data.get("server", {}).get("port", 5000)))
-    HOST = yaml_data.get("server", {}).get("host", "0.0.0.0")
+    HOST = os.getenv("SERVER_HOST", yaml_data.get("server", {}).get("host", "0.0.0.0"))
 
 settings = Settings()

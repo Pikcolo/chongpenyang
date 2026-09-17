@@ -53,9 +53,10 @@ class AdvancedChunker:
             if not combined_page_content or len(combined_page_content) < 10:
                 continue
 
-            topic_info = detect_topic(combined_page_content)
+            topic_info = detect_topic(combined_page_content, page_no=page_no)
             topic_title = topic_info["topic_title"]
             doc_name = topic_info["document_name"]
+            module_id = topic_info.get("module_id", "MOD_01")
 
             # Create Parent Document for this page or logical section
             parent_id = f"parent_{parent_id_counter:04d}"
@@ -64,6 +65,7 @@ class AdvancedChunker:
             parent_meta = {
                 "parent_id": parent_id,
                 "page": page_no,
+                "module_id": module_id,
                 "topic_title": topic_title,
                 "topic_id": topic_info["topic_id"],
                 "document_name": doc_name,
@@ -89,6 +91,7 @@ class AdvancedChunker:
                             "parent_id": parent_id,
                             "parent_content": combined_page_content,
                             "page": page_no,
+                            "module_id": module_id,
                             "topic_title": topic_title,
                             "topic_id": topic_info["topic_id"],
                             "document_name": doc_name,
@@ -120,6 +123,7 @@ class AdvancedChunker:
                                 "parent_id": parent_id,
                                 "parent_content": combined_page_content,
                                 "page": page_no,
+                                "module_id": module_id,
                                 "topic_title": topic_title,
                                 "topic_id": topic_info["topic_id"],
                                 "document_name": doc_name,
@@ -153,6 +157,7 @@ class AdvancedChunker:
                                 "parent_id": parent_id,
                                 "parent_content": combined_page_content,
                                 "page": page_no,
+                                "module_id": module_id,
                                 "topic_title": topic_title,
                                 "topic_id": topic_info["topic_id"],
                                 "document_name": doc_name,

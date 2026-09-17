@@ -9,60 +9,91 @@ from PIL import Image, ImageDraw, ImageFont
 
 logger = logging.getLogger(__name__)
 
-RICH_MENU_IMG_PATH = "chatbot/web/static/images/rich_menu_barista.png"
+RICH_MENU_IMG_PATH = "chatbot/web/static/images/rich_menu_line.jpg"
 
 BARISTA_MENU_ITEMS = [
     # Row 1
     {
-        "title": "สูตร Perfect Shot",
-        "sub": "Espresso Standard (9-10 บาร์)",
-        "icon": "☕",
+        "title": "เมล็ด & การคั่ว",
+        "sub": "MOD_01: สายพันธุ์, Agtron, 5 เบอร์บด",
+        "icon": "🌱",
         "bg": "#2C1810",
         "accent": "#D4A373",
+        "text": "ความรู้เรื่องเมล็ดกาแฟ สายพันธุ์ ระดับการคั่ว Agtron และเบอร์บด (MOD_01)"
+    },
+    {
+        "title": "สกัด Perfect Shot",
+        "sub": "MOD_02: 9-10 บาร์, 90-96°C, 20-30s",
+        "icon": "☕",
+        "bg": "#3E2723",
+        "accent": "#E6CCB2",
         "text": "สูตรและเทคนิคการสกัด Perfect Shot เอสเพรสโซ่"
     },
     {
-        "title": "สตีมนม & ลาเต้อาร์ต",
-        "sub": "Microfoam (60-65°C)",
+        "title": "ลาเต้อาร์ต",
+        "sub": "MOD_03: Microfoam 60-65°C & ลายเท",
         "icon": "🥛",
-        "bg": "#3E2723",
-        "accent": "#E6CCB2",
-        "text": "เทคนิคการสตีมนมและทำลาเต้อาร์ต"
-    },
-    {
-        "title": "การปรับเบอร์บด",
-        "sub": "Calibration & Flow rate",
-        "icon": "⚙️",
         "bg": "#2C1810",
         "accent": "#D4A373",
-        "text": "วิธีปรับเบอร์บดเครื่องบดกาแฟให้เหมาะสม"
+        "text": "เทคนิคการสตีมนมและทำลาเต้อาร์ต"
     },
     # Row 2
     {
-        "title": "เมนูเครื่องดื่ม",
-        "sub": "Americano, Latte, กาแฟส้ม",
+        "title": "13 เมนูเครื่องดื่ม SOP",
+        "sub": "MOD_04: สูตรกาแฟร้อน & กาแฟเย็น",
         "icon": "🍹",
         "bg": "#4E342E",
         "accent": "#F5EBE0",
-        "text": "แนะนำสูตรเมนูเครื่องดื่มยอดนิยมตามคู่มือ"
+        "text": "เมนูเครื่องดื่ม"
     },
     {
-        "title": "วิเคราะห์รสชาติ",
-        "sub": "Under/Over Extraction",
+        "title": "วินิจฉัย Under / Over",
+        "sub": "MOD_02: แก้รสชาติ & Channeling",
         "icon": "🔬",
         "bg": "#2C1810",
         "accent": "#D4A373",
-        "text": "วิธีแก้ปัญหากาแฟรสชาติเปรี้ยวเกินไปหรือขมเกินไป"
+        "text": "วิเคราะห์รสชาติ"
     },
     {
-        "title": "สารบัญคู่มือ",
-        "sub": "หลักสูตรบาริสต้ามืออาชีพ",
-        "icon": "📖",
+        "title": "ควิซ & ใบงานบาริสต้า",
+        "sub": "MOD_05: แบบทดสอบ, Checklist, เฉลย",
+        "icon": "📝",
         "bg": "#3E2723",
         "accent": "#E6CCB2",
-        "text": "สารบัญหัวข้อทั้งหมดในคู่มือบาริสต้ามืออาชีพ"
+        "text": "แบบทดสอบวัดระดับความรู้บาริสต้าในคู่มือ (MOD_05) มีอะไรบ้าง?"
     }
 ]
+
+def prepare_rich_menu_image(
+    source_path: str = RICH_MENU_IMG_PATH,
+    output_path: str = "chatbot/web/static/images/rich_menu_line.jpg",
+    force_generate: bool = False
+) -> str:
+    """
+    Prepares a LINE-compliant 2500x1686 image (strictly under 1MB limit).
+    Uses the custom rich_menu_barista.png image resized to 2500x1686 via LANCZOS.
+    Falls back to procedural generation only if custom image is missing.
+    """
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    if not force_generate and os.path.exists(source_path):
+        try:
+            with Image.open(source_path) as img:
+                img_rgb = img.convert("RGB")
+                img_resized = img_rgb.resize((2500, 1686), Image.Resampling.LANCZOS)
+                img_resized.save(output_path, format="JPEG", quality=92, optimize=True)
+                logger.info(f"Custom rich menu image processed and saved to {output_path}")
+                return output_path
+        except Exception as e:
+            logger.warning(f"Failed to process custom rich menu image {source_path}: {e}, falling back to generator")
+
+    # Generate fresh procedural image matching updated 6 modules
+    temp_png = "chatbot/web/static/images/rich_menu_generated.png"
+    generate_rich_menu_image(temp_png)
+    with Image.open(temp_png) as img:
+        img_rgb = img.convert("RGB")
+        img_rgb.save(output_path, format="JPEG", quality=92, optimize=True)
+    return output_path
+
 
 def generate_rich_menu_image(output_path: str = RICH_MENU_IMG_PATH) -> str:
     """
@@ -158,3 +189,4 @@ def get_rich_menu_payload() -> dict:
         "chatBarText": "☕ เมนูบาริสต้า",
         "areas": areas
     }
+

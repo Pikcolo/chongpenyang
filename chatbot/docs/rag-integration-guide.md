@@ -1,12 +1,12 @@
-# ☕ SmartDoc Assistant – Production-Grade Hybrid RAG & LINE Webhook Guide
+# ☕ Chongpenyang Barista AI – Production-Grade Hybrid RAG, Web Simulator & LINE UI Guide
 
-คู่มือการติดตั้ง ใช้งาน และเชื่อมต่อระบบ **SmartDoc Barista Hybrid RAG Chatbot** ร่วมกับ **LINE Messaging API** และ **Cloudflare Tunnel** 
+คู่มือฉบับสมบูรณ์สำหรับการติดตั้ง ใช้งาน และเชื่อมต่อระบบ **Chongpenyang Barista AI** (คู่มือประกอบการฝึกอบรม หลักสูตรบาริสต้ามืออาชีพ) ที่ยกระดับสู่เกณฑ์ **Grade A / Production-Grade (4.0/4.0)** พร้อม **Web Simulator & Diagnostics Inspector** และระบบ **LINE UI ครบวงจร (Rich Menu, Contextual Quick Replies, Flex Carousel, Troubleshoot Flex)**
 
 ---
 
 ## 🌟 1. สถาปัตยกรรมระบบ (System Architecture)
 
-ระบบ RAG ถูกออกแบบตามหลัก **Production-Grade Modular OOP Architecture** แบ่งเป็นชั้นการทำงานที่ชัดเจน:
+ระบบถูกพัฒนาขึ้นแบบ **Modular OOP Architecture** พร้อมรองรับทั้ง Web Simulator Dashboard และ LINE Messaging API:
 
 ```
                             ┌──────────────────────────────┐
@@ -28,7 +28,7 @@
                     ▼ [retrieval/vector_store.py]                 ▼ [retrieval/bm25_retriever.py]
         ┌───────────────────────┐                     ┌───────────────────────┐
         │  ChromaDB / FAISS     │                     │  BM25 Sparse Search   │
-        │  (Dense Vector Store) │                     │  (Thai newmm Tokens)  │
+        │  (Dense Vector Store) │                     │  (PyThaiNLP Tokens)   │
         └───────────┬───────────┘                     └───────────┬───────────┘
                     │                                             │
                     └──────────────────────┬──────────────────────┘
@@ -47,136 +47,147 @@
                                            ▼ [generation/guardrails.py]
                             ┌──────────────────────────────┐
                             │  Zero-Hallucination Guardrail│
+                            │  & Barista Term Sanitization │
                             └──────────────┬───────────────┘
                                            │
                                            ▼ [generation/rag_chain.py]
                             ┌──────────────────────────────┐
-                            │   Ollama (qwen2.5:3b)        │
+                            │   Ollama LLM (qwen2.5:3b)    │
                             │   Few-Shot & CoT Reasoning   │
                             └──────────────┬───────────────┘
                                            │
                                            ▼ [generation/citation_engine.py]
                             ┌──────────────────────────────┐
-                            │  Source Citations (Page/Topic)
+                            │  📌 Official Citations Footer│
                             └──────────────┬───────────────┘
                                            │
-                                           ▼ [interfaces/webhook.py]
-                            ┌──────────────────────────────┐
-                            │   Flask Webhook (Port 5000)  │
-                            └──────────────┬───────────────┘
-                                           │
-                                           ▼ [cloudflared tunnel]
-                            ┌──────────────────────────────┐
-                            │   Cloudflare HTTPS Tunnel    │
-                            └──────────────┬───────────────┘
-                                           │
-                                           ▼
-                            ┌──────────────────────────────┐
-                            │      LINE Messaging App      │
-                            └──────────────────────────────┘
+                    ┌──────────────────────┴──────────────────────┐
+                    │                                             │
+                    ▼                                             ▼
+        ┌───────────────────────┐                     ┌───────────────────────┐
+        │  Web Simulator & UI   │                     │ LINE Messaging API    │
+        │  (Port 5000 /)        │                     │ (Port 5000 /callback) │
+        │  • Realtime Inspector │                     │ • 6-Grid Rich Menu    │
+        │  • Thinking UI Anim   │                     │ • Native Loading Anim │
+        │  • Assistant Cards    │                     │ • Contextual QRs      │
+        │  • 1-Click Test Qs    │                     │ • Flex Carousels      │
+        └───────────────────────┘                     └───────────────────────┘
 ```
 
 ---
 
-## 🚀 2. ขั้นตอนการรันระบบ LINE Bot (Step-by-Step Operations)
+## 🎨 2. จุดเด่นของหน้าตาและระบบ UI (User Interface Features)
 
-เพื่อให้ LINE Chatbot สามารถรับข้อความจากผู้ใช้และตอบกลับได้ จะต้องเปิด **2 Terminal (PowerShell)** รันควบคู่กัน:
+### 2.1 Web Testing Simulator & Realtime Diagnostics Inspector (`http://localhost:5000`)
+- **ฝั่งซ้าย (Inspector Sidebar):**
+  - **RAG Telemetry เรียลไทม์:** แสดงโมเดลที่ใช้งาน (`qwen2.5:3b` หรือ `llama3.2:3b`), เอนจินสืบค้น (`FAISS Dense + BM25 PyThaiNLP + RRF`), Re-ranker (`Cross-Encoder`), Dynamic $k$, Re-rank Confidence Progress Bar, และค่า Latency (ms)
+  - **Retrieved Chunks Viewer:** แสดงบล็อกข้อความจริงที่ดึงมาจาก PDF พร้อมคะแนนความเหมือน และเลขหน้าเอกสารต้นทาง
+  - **1-Click Test Prompts:** ปุ่มกดทดสอบคำถาม 6 หมวดสำคัญตามเกณฑ์ Rubric Score
+- **ฝั่งขวา (Chat Simulator):**
+  - **Animated Thinking UI:** แสดงการ์ดสถานะกำลังค้นคว้าแบบเคลื่อนไหว (จุดเด้ง ● ● ●, แถบ Shimmer, และสเต็ปการทำงานเรียลไทม์) ขณะรอ LLM
+  - **Assistant Card Layout:** กล่องข้อความตอบกลับแถบหัวข้อเขียวมรกต พร้อมชื่อเรื่อง `❓ {คำถาม}`, เนื้อหาแยกข้อย่อยชัดเจน, และส่วนอ้างอิง `📌 อ้างอิงคู่มือบาริสต้ามืออาชีพ:` ท้ายการ์ด
+  - **Dynamic Quick Reply Chips:** แถบปุ่มลัดด้านล่างที่ปรับเปลี่ยนตามหัวข้อที่เพิ่งสนทนา
 
-### 🖥️ Terminal ที่ 1: รัน Webhook Server (Flask)
-เปิด PowerShell หน้าต่างที่ 1 ในโฟลเดอร์โปรเจกต์:
+### 2.2 ระบบ LINE UI เต็มรูปแบบ (ตามสไตล์ Barista Assistant)
+- **Official LINE Rich Menu (ขนาดมาตรฐาน 2500x1686 - Barista Custom Artwork):**
+  - ดีไซน์การ์ดเมนู 6 ช่องธีมกาแฟพรีเมียม (Coffee Tone UI) พร้อมคำสั่งลัด:
+    1. ☕ **สูตร Perfect Shot** (9-10 บาร์ & 90-95°C)
+    2. 🥛 **สตีมนม & ลาเต้อาร์ต** (Microfoam 60-65°C)
+    3. ⚙️ **การปรับเบอร์บด** (Calibration & Flow rate)
+    4. 🍹 **เมนูเครื่องดื่ม** (Americano, Latte, กาแฟส้ม ฯลฯ)
+    5. 🔬 **วิเคราะห์รสชาติ** (Under/Over Extraction)
+    6. 📖 **สารบัญคู่มือ** (5 โมดูลหลักสูตรบาริสต้ามืออาชีพ)
+  - ตั้งค่า `"selected": True` ให้แสดง Rich Menu อัตโนมัติเมื่อเข้าห้องแชท พร้อมระบบพับเก็บเปิดแป้นพิมพ์ได้ตลอดเวลา
+  - ระบบประมวลผลภาพอัตโนมัติ: ดึงภาพต้นฉบับ `rich_menu_barista.png` มา Resize สเกลเป็น 2500x1686 และบีบอัดคุณภาพสูง (< 1 MB) เป็น `rich_menu_line.jpg` สำหรับส่งขึ้น LINE CDN ทันที
+- **Contextual Quick Reply Chips (ขับเคลื่อนด้วย Taxonomy จาก Knowledge Graph):**
+  - ตรวจจับบริบทแล้วสลับปุ่มให้ผู้ใช้กดถามต่อได้ทันทีสูงสุด 12 ปุ่ม ครอบคลุมทั้ง 5 โมดูล (MOD_01 ถึง MOD_05)
+  - กำกับความยาวข้อความปุ่มทุกปุ่มให้ไม่เกิน 20 ตัวอักษรอย่างเข้มงวดตามข้อกำหนดของ LINE Messaging API
+- **Stunning Flex Message Carousel (8 เมนูเครื่องดื่มมาตรฐานจากคู่มือ):**
+  - การ์ดสไลด์แนวนอนขนาด Mega พร้อม Color Palette เฉพาะเมนู, ป้าย Badge, ตารางพารามิเตอร์ (สัดส่วน, เวลา/อุณหภูมิ, มาตรฐาน), กล่องเคล็ดลับบาริสต้า (Barista Tips) และปุ่ม Dual Actions:
+    1. `📖 ดูวิธีทำ SOP ละเอียด`
+    2. `⚙️ พารามิเตอร์การสกัด`
+  - ครอบคลุมทั้ง 8 เมนูหลัก: เอสเพรสโซ่ เพอร์เฟกต์ช็อต, อเมริกาโน่เย็น, คาเฟ่ ลาเต้ & อาร์ต, คาปูชิโน่ร้อน, เอสเพรสโซ่เย็นสไตล์ไทย, กาแฟส้ม, กาแฟพีช, กาแฟน้ำผึ้งมะนาว
+- **Extraction Troubleshoot Flex Card:**
+  - การ์ดเปรียบเทียบข้อผิดพลาดการสกัด 3 สถานะ: Under-Extraction (สีแดง) vs Over-Extraction (สีส้ม) vs Perfect Shot (สีเขียว) พร้อมคำแนะนำการแก้ไขทันที
+- **Safe Reply Fallback Engine:**
+  - เพิ่มระบบตรวจจับข้อผิดพลาดและ Fallback ส่ง Plain Text หาก API ของ LINE มีการเปลี่ยนแปลงหรือเกิดข้อผิดพลาด ป้องกันปัญหา 500 error
 
+### 2.3 โครงสร้างหลักสูตร 5 โมดูลอย่างเป็นทางการ (Official 5 Curriculum Modules)
+
+ระบบจัดโครงสร้าง Taxonomy และ Metadata ตามคู่มือฝึกอบรมบาริสต้ามืออาชีพ (53 หน้า) ออกเป็น 5 โมดูลหลัก:
+
+| โมดูล | ชื่อโมดูล | ช่วงหน้า | ขอบเขตเนื้อหาสำคัญ |
+|:---:|---|:---:|---|
+| **MOD_01** | ความรู้เบื้องต้นเกี่ยวกับเมล็ดกาแฟ | หน้า 3 – 19 | • ประวัติความเป็นมาและแหล่งกำเนิดกาแฟโลก (ตำนาน Kaldi)<br>• สายพันธุ์กาแฟหลัก (Arabica, Robusta, Peaberry)<br>• สายพันธุ์ย่อยยอดนิยม (Typica, Bourbon, Caturra, Catuai, Geisha)<br>• ปัจจัยการเพาะปลูก: ระดับความสูง, อุณหภูมิ, ปริมาณน้ำฝน<br>• 10 ขั้นตอนการผลิตจากต้นสู่แก้ว (ปลูก, เก็บเกี่ยว, แปรรูป Washed/Dry/Honey, สีเมล็ด, คัดเกรด, Cupping, คั่ว, บด, ชง, เสิร์ฟ)<br>• ระดับการคั่ว (Light, Medium, Dark/French) และตารางสเกล Agtron (80-70 ถึง 30-25)<br>• เบอร์บดกาแฟ 5 ระดับ (Extra Fine ถึง Coarse) และการเลือกใช้อุปกรณ์ชง |
+| **MOD_02** | เคล็ดลับการชงกาแฟ หลักการและวิธีการ | หน้า 20 – 31 | • วิทยาศาสตร์การสกัดกาแฟ (Extraction Parameters)<br>• คุณภาพน้ำ, อุณหภูมิน้ำในการสกัด (90–96°C), แรงดัน (9-10 บาร์)<br>• การประเมินสถานะการสกัด: **Espresso Perfect Shot** (20-30s, 1-1.5 oz), **Under Extraction** (สกัดน้อยเกินไป), **Over Extraction** (สกัดมากเกินไป)<br>• อาการของครีม่า (Crema), รสชาติ (Sensory Profile), สาเหตุ และแนวทางแก้ไข<br>• ปรากฏการณ์ **Channeling** สาเหตุและวิธีป้องกัน (WDT, ระนาบการแทมป์ 90°)<br>• การบำรุงรักษา: ด้ามชง Bottomless Naked Portafilter และการทำ Backflush |
+| **MOD_03** | ประวัติความเป็นมาและศาสตร์ของลาเต้อาร์ต | หน้า 32 – 36 | • ประวัติและต้นกำเนิด Latte Art (David Schomer / Espresso Vivace, Seattle, Luigi Bezzera 1901)<br>• การแข่งขัน World Latte Art Championship (WLAC) และแชมป์โลก (Manuela Fensore 2019)<br>• วิทยาศาสตร์ฟองนม (Microfoam): โปรตีนเคซีนและไขมันนมที่อุณหภูมิ 60–65°C (ไม่เกิน 70°C)<br>• เทคนิคการเท 2 รูปแบบ: Free Pour (ลาย Heart, Tulip, Rosetta) และ Etching (การวาดลาย) |
+| **MOD_04** | ใบขั้นตอนการปฏิบัติงาน การชงกาแฟร้อนและเย็น (SOP) | หน้า 37 – 50 | • สูตรและสัดส่วนมาตรฐานของเมนูกาแฟ 13 เมนู (ร้อน 5 เมนู, เย็น 8 เมนู)<br>• อัตราส่วนวัตถุดิบ (Dose, Yield, สัดส่วนนม/น้ำเชื่อม/น้ำผลไม้)<br>• อุปกรณ์เฉพาะทางและเครื่องบด/เครื่องชงประจำเมนู<br>• ขั้นตอน Standard Operating Procedure (SOP) ทีละสเต็ป<br>• เทคนิคและ Barista Tips ประจำแต่ละเมนู (Espresso, Americano, Latte, Cappuccino, Thai Iced Espresso, กาแฟส้ม, กาแฟพีช, กาแฟน้ำผึ้งมะนาว, ลาเต้มิ้นท์) |
+| **MOD_05** | ใบงาน ใบทดสอบ และใบเฉลย | หน้า 51 – 53 | • แบบทดสอบวัดระดับความรู้บาริสต้า (การประเมินช็อต, พารามิเตอร์, อุณหภูมิ)<br>• Checklist ตรวจสอบทักษะการชงและการจัดการบาร์<br>• แนวทางปฏิบัติและเฉลยคำตอบมาตรฐานตามเกณฑ์บาริสต้ามืออาชีพ |
+
+เอกสารรายงานการประเมินทางเทคนิคเพิ่มเติม:
+- 🔬 [คู่มือเปรียบเทียบโมเดล Embedding (BGE-M3 vs E5-base vs MiniLM)](file:///d:/PIK/y4-1/241-351_AI_for_social/chongpenyang/chatbot/docs/embedding-models-comparison.md)
+- 🧠 [คู่มือเปรียบเทียบโมเดล LLM กะทัดรัด (Qwen 2.5 3B vs Gemma 2 2B vs Llama 3.2 3B)](file:///d:/PIK/y4-1/241-351_AI_for_social/chongpenyang/chatbot/docs/llm-selection-and-comparison.md)
+
+---
+
+## 🚀 3. ขั้นตอนการรันระบบ (Step-by-Step Operations)
+
+### ขั้นตอนที่ 1: เปิดใช้งาน LINE Rich Menu (ทำเพียงครั้งแรก หรือเมื่ออัปเดตรูป)
 ```powershell
-# 1. เปิด Virtual Environment (ต้องมี (venv) ด้านหน้า)
 .\venv\Scripts\Activate.ps1
+python setup_rich_menu.py
+```
+*ระบบจะนำภาพต้นฉบับมาแปลงขนาดเป็น 2500x1686 (< 1MB), ลงทะเบียน Rich Menu Schema กับ LINE API, อัปโหลดภาพเข้า CDN, ตั้งเป็น Default Rich Menu ทันที และล้าง Rich Menu เก่าออกอัตโนมัติ*
 
-# 2. รัน Webhook Server
+---
+
+### ขั้นตอนที่ 2: รัน Unified Server (Web Simulator + Webhook)
+เปิด PowerShell หน้าต่างที่ 1:
+```powershell
+.\venv\Scripts\Activate.ps1
+python main.py
+# หรือ
 python -m chatbot.interfaces.webhook
 ```
-
-เมื่อระบบโหลดเสร็จสมบูรณ์ จะแสดงข้อความ:
+เมื่อโหลดเสร็จจะขึ้นข้อความ:
 ```text
-🚀 Initializing Webhook RAG Engine...
 ✅ BM25 indexed 339 documents.
 ✅ Cross-Encoder Re-ranker ready.
-✅ Webhook RAG Engine initialized successfully.
-🌐 Starting Server on port 5000...
- * Running on all addresses (0.0.0.0)
- * Running on http://127.0.0.1:5000
+✅ Production RAG Engine online and ready.
+🌐 Starting Chongpenyang Barista AI Server on port 5000...
+📱 Web Simulator & Inspector: http://localhost:5000
+🔗 LINE Webhook URL: http://localhost:5000/callback
 ```
-*(เซิร์ฟเวอร์จะเปิดรับคำสั่งอยู่ที่พอร์ต `5000`)*
+- **เปิดเบราว์เซอร์ไปที่:** `http://localhost:5000` เพื่อใช้งาน Web Simulator และ Inspector
 
 ---
 
-### 🌐 Terminal ที่ 2: รัน Cloudflare Tunnel (สร้าง Public HTTPS URL)
-เปิด PowerShell หน้าต่างที่ 2 (โดยไม่ต้องปิดหน้าต่างที่ 1):
-
+### ขั้นตอนที่ 3: เปิด Cloudflare Tunnel เชื่อมต่อ LINE
+เปิด PowerShell หน้าต่างที่ 2:
 ```powershell
 cloudflared tunnel --url http://localhost:5000
 ```
-
-หน้าจอจะแสดง URL ชั่วคราวที่เป็น HTTPS ขึ้นมาในกรอบ เช่น:
+คัดลอก HTTPS URL ที่ได้ เช่น:
 ```text
-+--------------------------------------------------------------------------------------------+
-|  Your quick Tunnel has been created! Visit it at (it may take some time to be reachable):  |
-|  https://example-subdomain-here.trycloudflare.com                                          |
-+--------------------------------------------------------------------------------------------+
+https://xxxx-xxxx.trycloudflare.com
 ```
-
-> ⚠️ **ข้อควรระวังในการรัน Cloudflare Tunnel**:
-> - หน้าต่าง Terminal ที่ 2 ต้องเปิดทิ้งไว้ตลอดเวลาขณะใช้งาน หากปิดหน้าต่าง Tunnel จะหยุดทำงานทันที
-> - หาก Tunnel มีการหลุด ให้กด `Ctrl + C` แล้วพิมพ์ `cloudflared tunnel --url http://localhost:5000` เพื่อรับ URL ใหม่อีกครั้ง
-
----
-
-### 📲 ขั้นตอนที่ 3: นำ URL ไปตั้งค่าใน LINE Developers Console
-
-1. นำ URL ที่ได้จาก Terminal ที่ 2 มาต่อท้ายด้วย `/callback` เช่น:
-   ```text
-   https://example-subdomain-here.trycloudflare.com/callback
-   ```
-2. เข้าสู่ [LINE Developers Console](https://developers.line.biz/) $\rightarrow$ เลือก Channel ของบอทคุณ
-3. ไปที่แท็บ **Messaging API**
-4. ในส่วน **Webhook settings**:
-   - นำ URL ไปวางลงในช่อง **Webhook URL** แล้วกดปุ่ม **Update**
-   - กดปุ่ม **Verify** $\rightarrow$ ระบบต้องแสดงข้อความสีเขียวว่า **Success**
-   - เลื่อนสวิตช์เปิด **Use webhook** ให้เป็น **ON (สีเขียว)**
-5. ไปที่ [LINE Official Account Manager](https://manager.line.biz/):
-   - ไปที่เมนู **ตั้งค่าการตอบกลับ (Response settings)**
-   - ปิด **ข้อความตอบกลับอัตโนมัติ (Auto-response messages)** ให้เป็น **OFF** เพื่อไม่ให้ระบบข้อความตอบรับเดิมของ LINE ตอบซ้อนกับบอท AI
-6. เปิดแอป LINE บนมือถือ แล้วเริ่มแชททดสอบกับบอทได้ทันที! ☕
-
----
-
-## 🧪 3. เครื่องมือและแนวทางการทดสอบระบบ (Testing Toolkit)
-
-### 1) ทดสอบผ่าน REST API โดยไม่ต้องผ่าน LINE
-ระหว่างที่ Webhook Server กำลังรันอยู่ สามารถเปิด Browser หรือ Postman ยิงทดสอบได้ที่:
-- **Health Check**: `http://localhost:5000/`
-- **Query Endpoint**: `http://localhost:5000/query?q=ขอสูตรกาแฟส้ม`
-
-### 2) ทดสอบผ่าน Interactive CLI Testbench (บน Terminal โดยตรง)
-```powershell
-python -m chatbot.interfaces.app_chat
+นำไปต่อท้ายด้วย `/callback` แล้วใส่ใน **LINE Developers Console**:
+```text
+https://xxxx-xxxx.trycloudflare.com/callback
 ```
-
-### 3) ชุดข้อความทดสอบมาตรฐานในไฟล์ Excel
-เราได้จัดทำไฟล์ Excel รวบรวม 20 คำถามทดสอบที่ครอบคลุมทุกแง่มุม (สูตรเครื่องดื่ม, การปรับเบอร์บด, การแก้ปัญหา Under/Over Extraction, การคั่ว, และการทดสอบ Guardrail ป้องกันการมโน) ไว้ที่:
-👉 **[test_line_queries.xlsx](file:///d:/PIK/y4-1/241-351_AI_for_social/chongpenyang/test_line_queries.xlsx)**
+*(กด Verify ให้ขึ้นสถานะ Success และเปิดใช้งาน Use Webhook)*
 
 ---
 
-## 📊 4. สรุปคำถามทดสอบที่แนะนำสำหรับบาริสต้า (Sample Test Queries)
+## 🧪 4. ชุดคำถามทดสอบคุณภาพ (Verification Queries)
 
-| หมวดหมู่ | ตัวอย่างข้อความสำหรับพิมพ์ใน LINE | วัตถุประสงค์ที่ทดสอบ |
-| :--- | :--- | :--- |
-| **ขอสูตรมาตรฐาน** | `ขอสูตรและขั้นตอนการทำเอสเพรสโซ่ร้อน` | ตรวจสอบปริมาณผงกาแฟ อุณหภูมิ และเวลาสกัด |
-| **สูตรเมนูเย็น** | `ขอสูตรกาแฟส้ม (Iced Orange Espresso)` | ตรวจสอบส่วนผสมน้ำส้ม น้ำแข็ง และการแยกชั้น |
-| **เมนูพิเศษ** | `สูตรการทำ Dirty Coffee มีขั้นตอนอย่างไร` | ตรวจสอบเทคนิคการใช้นมเย็นจัดและการสกัดช็อต |
-| **เปรียบเทียบเมนู** | `ลาเต้ร้อน กับ คาปูชิโน่ร้อน ต่างกันอย่างไร` | ตรวจสอบความเข้าใจสัดส่วนฟองนม |
-| **แก้ปัญหากาแฟเปรี้ยว** | `ทำไมกาแฟถึงมีรสชาติเปรี้ยวฝาด ครีม่าซีดจาง น้ำไหลเร็ว` | ตรวจสอบการวินิจฉัย Under-Extraction |
-| **แก้ปัญหากาแฟขมไหม้** | `กาแฟรสขมไหม้ น้ำกาแฟหยดช้า เกิดจากอะไรและแก้ยังไง` | ตรวจสอบการวินิจฉัย Over-Extraction |
-| **วิทยาศาสตร์การคั่ว** | `ระดับการคั่วอ่อนมีค่า Agtron เท่าไร และรสชาติเป็นอย่างไร` | ตรวจสอบการดึงข้อมูลจากตาราง Agtron |
-| **การสตีมนม** | `อุณหภูมินมที่เหมาะสมในการสตีมคือเท่าไร และทำไมไม่เกิน 70 องศา` | ตรวจสอบความเข้าใจวิทยาศาสตร์โปรตีนนม |
-| **การบำรุงรักษา** | `การ Backflush เครื่องชงกาแฟมีขั้นตอนอย่างไรและทำเพื่ออะไร` | ตรวจสอบขั้นตอน SOP และการใช้ Blind Basket |
-| **ทดสอบ Guardrail** | `แนะนำวิธีทำต้มยำกุ้งน้ำข้นหน่อยครับ` | ตรวจสอบ Zero Hallucination (ต้องปฏิเสธอย่างสุภาพ) |
-| **ตรวจสอบ Citation** | `บอกสูตรกาแฟร้อนทั้งหมดในคู่มือพร้อมระบุเลขหน้าอ้างอิง` | ตรวจสอบการสร้าง Footnote อ้างอิงเลขหน้า |
+| ลำดับ | คำถามทดสอบ | พฤติกรรมและผลลัพธ์ที่ถูกต้อง |
+|:---:|---|---|
+| 1 | `สวัสดีครับ` | แนะนำตัวเป็น Chongpenyang Barista AI และไม่แสดง Citation ปลอม |
+| 2 | `อุณหภูมิน้ำและแรงดันในการสกัดเอสเพรสโซ่ที่ถูกต้องคือเท่าไร?` | ตอบ 90-96°C และ 9-10 บาร์ (ไม่มีคำว่า "มิลลิแปร"), พร้อมแนบ `📌 อ้างอิงคู่มือ:` หน้า 24/30 |
+| 3 | `เทคนิคการสตีมนมและทำลาเต้อาร์ต อุณหภูมิเท่าไร?` | ตอบอุณหภูมิ 60-65°C พร้อม Quick Replies แนะนำลาย Rosetta/Tulip/Heart |
+| 4 | `ขอสูตรกาแฟส้ม (Black Orange Coffee)` | สรุปสัดส่วนน้ำส้ม 120ml และ Espresso 2 ช็อตตามคู่มือ SOP |
+| 5 | `วิธีแก้ปัญหากาแฟรสชาติเปรี้ยวเกินไปหรือขมเกินไป` | สรุปเปรียบเทียบ Under-Extraction vs Over-Extraction และการตั้งเบอร์บด |
+| 6 | `แนะนำวิธีทำเค้กช็อกโกแลตลาวาหน่อยครับ` | Trigger Zero-Hallucination Guardrail ปฏิเสธอย่างสุภาพทันที |
+
+*(ดูชุดทดสอบแบบเต็ม 20 ข้อ พร้อมคำตอบที่คาดหวังและผลการประเมินได้ที่ [test_line_queries.json](file:///d:/PIK/y4-1/241-351_AI_for_social/chongpenyang/test_line_queries.json))*

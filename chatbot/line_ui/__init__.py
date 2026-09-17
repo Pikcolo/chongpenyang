@@ -8,7 +8,7 @@ from chatbot.line_ui.flex_welcome import create_welcome_flex
 from chatbot.line_ui.flex_carousel import create_recipes_carousel_flex
 from chatbot.line_ui.flex_troubleshoot import create_troubleshoot_flex
 from chatbot.line_ui.flex_citation import create_citation_flex
-from chatbot.line_ui.rich_menu import generate_rich_menu_image, get_rich_menu_payload
+from chatbot.line_ui.rich_menu import prepare_rich_menu_image, generate_rich_menu_image, get_rich_menu_payload
 
 __all__ = [
     "get_barista_quick_replies",
@@ -17,6 +17,7 @@ __all__ = [
     "create_recipes_carousel_flex",
     "create_troubleshoot_flex",
     "create_citation_flex",
+    "prepare_rich_menu_image",
     "generate_rich_menu_image",
     "get_rich_menu_payload"
 ]

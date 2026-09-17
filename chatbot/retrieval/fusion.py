@@ -34,9 +34,10 @@ def reciprocal_rank_fusion(
         doc_map[doc_id] = doc
         scores[doc_id] = scores.get(doc_id, 0.0) + (1.0 / (k + rank))
 
-    # Sort documents by accumulated RRF score descending
+    # Sort documents by accumulated RRF score descending and normalize to [0, 1]
+    max_possible = 2.0 / (k + 1.0)
     sorted_items = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-    return [(doc_map[doc_id], score) for doc_id, score in sorted_items]
+    return [(doc_map[doc_id], min(1.0, score / max_possible)) for doc_id, score in sorted_items]
 
 def relative_score_fusion(
     dense_results: List[Tuple[Document, float]],

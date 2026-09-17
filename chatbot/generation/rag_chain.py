@@ -9,9 +9,10 @@ from langchain_ollama import ChatOllama
 
 from chatbot.config import settings
 from chatbot.retrieval.dynamic_retriever import DynamicHybridRetriever
-from chatbot.generation.prompt_templates import format_rag_prompt
+from chatbot.generation.prompt_templates import format_rag_prompt, build_chat_messages
 from chatbot.generation.guardrails import GuardrailManager
 from chatbot.generation.citation_engine import CitationEngine
+from chatbot.ingestion.text_cleaner import clean_thai_text
 
 class BaristaRAGChain:
     """Full Production-Grade Conversational RAG Pipeline."""
@@ -87,10 +88,10 @@ class BaristaRAGChain:
             greeting_reply = (
                 "สวัสดีครับ! ผมคือ \"SmartDoc Barista AI\" ผู้ช่วยผู้เชี่ยวชาญด้านศาสตร์แห่งกาแฟและบาริสต้ามืออาชีพ ☕\n\n"
                 "ผมพร้อมให้คำแนะนำข้อมูลตามคู่มือหลักสูตรบาริสต้ามืออาชีพ เช่น:\n"
-                "• 📖 สูตรและวิธีทำเครื่องดื่มร้อน-เย็น (Espresso, Americano, Latte, กาแฟส้ม, Dirty ฯลฯ)\n"
-                "• ⚙️ เทคนิคการสกัด Perfect Shot (อุณหภูมิ 90-95°C, แรงดัน 9 บาร์, ปรับเบอร์บด)\n"
+                "• 📖 สูตรและวิธีทำเครื่องดื่มตาม SOP (Espresso, Americano, กาแฟส้ม, กาแฟพีช, ลาเต้มิ้นท์, กาแฟน้ำผึ้งมะนาว ฯลฯ)\n"
+                "• ⚙️ เทคนิคการสกัด Perfect Shot (อุณหภูมิ 90-96°C, แรงดัน 9-10 บาร์, เวลา 20-30 วินาที)\n"
                 "• 🔬 วิเคราะห์และแก้ปัญหารสชาติ Under-Extraction / Over-Extraction\n"
-                "• 🥛 วิทยาศาสตร์การสตีมนมและเทคนิค Latte Art\n\n"
+                "• 🥛 วิทยาศาสตร์การสตีมนมและประวัติศาสตร์ Latte Art\n\n"
                 "วันนี้สนใจสอบถามสูตรหรือข้อมูลเทคนิคด้านใด พิมพ์ถามได้เลยครับ!"
             )
             self.add_user_history(session_id, "user", question)
@@ -111,7 +112,7 @@ class BaristaRAGChain:
         dynamic_k = retrieval_output["dynamic_k"]
 
         # 2. Pre-generation Guardrail
-        is_valid, fallback_msg = self.guardrails.validate_retrieval(contexts)
+        is_valid, fallback_msg = self.guardrails.validate_retrieval(contexts, query=question)
         if not is_valid:
             self.add_user_history(session_id, "user", question)
             self.add_user_history(session_id, "assistant", fallback_msg)
@@ -128,12 +129,13 @@ class BaristaRAGChain:
         # 3. Format Context and Prompt
         context_blocks = []
         for idx, c in enumerate(contexts, start=1):
-            source_tag = f"[ข้อมูลที่ {idx} | หน้า {c['page']} | หัวข้อ: {c['topic_title']}]"
-            context_blocks.append(f"{source_tag}\n{c['content']}")
+            source_tag = f"[เอกสารอ้างอิงลำดับที่ {idx} | หน้า {c['page']} ({c['topic_title']})]"
+            cleaned_content = clean_thai_text(c['content'])
+            context_blocks.append(f"{source_tag}\n{cleaned_content}")
         full_context_str = "\n\n".join(context_blocks)
 
         history_str = self.get_user_history_str(session_id)
-        prompt = format_rag_prompt(
+        chat_messages = build_chat_messages(
             query=question,
             context_text=full_context_str,
             chat_history=history_str
@@ -144,10 +146,16 @@ class BaristaRAGChain:
             raw_answer = "❌ ไม่สามารถเชื่อมต่อกับ Ollama LLM ได้ กรุณาตรวจสอบว่า Ollama กำลังรันอยู่"
         else:
             try:
-                response = self.llm.invoke(prompt)
+                response = self.llm.invoke(chat_messages)
                 raw_answer = response.content if hasattr(response, "content") else str(response)
             except Exception as e:
-                raw_answer = f"⚠️ เกิดข้อผิดพลาดในการเรียก LLM: {e}"
+                # Fallback to single string prompt if chat messages format encounters error
+                try:
+                    prompt = format_rag_prompt(question, full_context_str, history_str)
+                    response = self.llm.invoke(prompt)
+                    raw_answer = response.content if hasattr(response, "content") else str(response)
+                except Exception as inner_e:
+                    raw_answer = f"⚠️ เกิดข้อผิดพลาดในการเรียก LLM: {inner_e}"
 
         # 5. Post-generation Guardrail
         cleaned_answer = self.guardrails.validate_generation(question, raw_answer, contexts)

@@ -26,11 +26,10 @@ from chatbot.generation.guardrails import GuardrailManager
 from chatbot.generation.rag_chain import BaristaRAGChain
 
 # LINE UI components
-from chatbot.line_ui.quick_replies import get_barista_quick_replies, get_quick_reply_list
 from chatbot.line_ui.flex_welcome import create_welcome_flex
 from chatbot.line_ui.flex_carousel import create_recipes_carousel_flex
 from chatbot.line_ui.flex_troubleshoot import create_troubleshoot_flex
-from chatbot.line_ui.flex_citation import create_citation_flex
+from chatbot.line_ui.quick_replies import get_line_sdk_quick_reply, get_quick_reply_list
 
 # Configure Flask App with Web Simulator templates & static folder
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"
@@ -93,7 +92,18 @@ def index():
 @app.route("/api/quick_replies", methods=["GET"])
 def api_quick_replies():
     """Returns preset quick-reply chips for web UI."""
-    return jsonify({"quick_replies": get_quick_reply_list()})
+    q = request.args.get("q", "").strip()
+    return jsonify({"quick_replies": get_quick_reply_list(user_query=q)})
+
+@app.route("/health", methods=["GET"])
+def health():
+    """Health check endpoint for container and uptime monitoring."""
+    return jsonify({
+        "status": "healthy",
+        "service": "Chongpenyang Barista Assistant",
+        "model": settings.OLLAMA_MODEL,
+        "retriever": settings.VECTOR_STORE_TYPE
+    })
 
 @app.route("/api/flex/carousel", methods=["GET"])
 def api_flex_carousel():
@@ -103,7 +113,8 @@ def api_flex_carousel():
 @app.route("/api/flex/troubleshoot", methods=["GET"])
 def api_flex_troubleshoot():
     """Returns extraction troubleshoot flex schema."""
-    return jsonify({"flex": create_troubleshoot_flex()})
+    bubble = create_troubleshoot_flex()
+    return jsonify({"flex": bubble, "bubble": bubble})
 
 @app.route("/api/chat", methods=["POST"])
 def api_chat():
@@ -144,6 +155,7 @@ def api_chat():
         "question": message,
         "reply_text": output["answer"],
         "citations": output.get("citations", []),
+        "quick_replies": get_quick_reply_list(user_query=message, reply_text=output["answer"]),
         "telemetry": telemetry
     })
 
@@ -184,63 +196,113 @@ def callback():
 
     return "OK"
 
+def show_line_loading_animation(chat_id: str, seconds: int = 25):
+    """Triggers LINE's native thinking/loading animation in the user's chat screen asynchronously."""
+    if not settings.CHANNEL_ACCESS_TOKEN or not chat_id:
+        print(f"⚠️ Cannot show loading animation: missing token or chat_id (chat_id={chat_id})")
+        return
+
+    import threading
+    def _call():
+        try:
+            import requests
+            url = "https://api.line.me/v2/bot/chat/loading/start"
+            headers = {
+                "Authorization": f"Bearer {settings.CHANNEL_ACCESS_TOKEN}",
+                "Content-Type": "application/json"
+            }
+            payload = {"chatId": chat_id, "loadingSeconds": min(max(5, seconds), 60)}
+            res = requests.post(url, headers=headers, json=payload, timeout=5)
+            print(f"⏳ [LINE API] Loading Animation started for {chat_id}: HTTP {res.status_code}")
+        except Exception as e:
+            print(f"⚠️ [LINE API] Failed to trigger loading animation: {e}")
+
+    threading.Thread(target=_call, daemon=True).start()
+
 if handler:
     @handler.add(MessageEvent, message=TextMessage)
     def handle_line_text_message(event):
         user_text = event.message.text.strip()
-        user_id = event.source.user_id
-
-        # 1. Build Quick Reply items for LINE
-        qr_payload = get_barista_quick_replies()
-        quick_reply_obj = QuickReply(
-            items=[
-                QuickReplyButton(
-                    action=MessageAction(
-                        label=item["action"]["label"],
-                        text=item["action"]["text"]
-                    )
-                )
-                for item in qr_payload["items"]
-            ]
-        )
-
-        # 2. Check for Rich Menu / Shortcut Intents
+        user_id = getattr(event.source, "user_id", None) or getattr(event.source, "sender_id", None)
         clean_text = user_text.lower()
 
-        # Intent A: Popular Drinks Carousel
+        # 🟢 Show native LINE loading/typing indicator (the 3 animated dots) immediately
+        print(f"📩 [LINE Incoming] user_id='{user_id}' | text: '{user_text}'")
+        if user_id:
+            show_line_loading_animation(user_id, seconds=25)
+
+        # Intent A: Welcome Card & Table of Contents (5 Modules)
+        if any(w in clean_text for w in ["สารบัญ", "5 โมดูล", "ภาพรวมหลักสูตร", "คู่มือบาริสต้ามืออาชีพ", "โมดูล", "เริ่มต้น"]):
+            flex_content = create_welcome_flex()
+            quick_reply = get_line_sdk_quick_reply(user_text, "สารบัญ 5 โมดูลหลักสูตรบาริสต้ามืออาชีพ")
+            flex_msg = FlexSendMessage(
+                alt_text="☕ คู่มือบาริสต้ามืออาชีพ (5 โมดูล) - Chongpenyang Barista AI",
+                contents=flex_content,
+                quick_reply=quick_reply
+            )
+            line_bot_api.reply_message(event.reply_token, flex_msg)
+            return
+
+        # Intent B: Popular Drinks Carousel (MOD_04 SOP)
         if any(w in clean_text for w in ["เมนูเครื่องดื่ม", "แนะนำสูตรเมนู", "สูตรเมนูยอดนิยม", "carousel"]):
             flex_content = create_recipes_carousel_flex()
+            quick_reply = get_line_sdk_quick_reply(user_text, "สูตรเมนูเครื่องดื่มยอดนิยมตามคู่มือ")
             flex_msg = FlexSendMessage(
-                alt_text="🍹 แนะนำสูตรเมนูเครื่องดื่มยอดนิยมตามคู่มือ",
+                alt_text="🍹 แนะนำสูตรเมนูเครื่องดื่มยอดนิยมตามคู่มือ (MOD_04 SOP)",
                 contents=flex_content,
-                quick_reply=quick_reply_obj
+                quick_reply=quick_reply
             )
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
-        # Intent B: Extraction Diagnosis / Troubleshoot Card
+        # Intent C: Extraction Diagnosis / Troubleshoot Card (MOD_02)
         if any(w in clean_text for w in ["วิเคราะห์รสชาติ", "แก้อาการ", "รสเปรี้ยวเกินไป", "ขมเกินไป", "under", "over"]):
             flex_content = create_troubleshoot_flex()
+            quick_reply = get_line_sdk_quick_reply(user_text, "วิเคราะห์รสชาติและแก้ไขการสกัด")
             flex_msg = FlexSendMessage(
-                alt_text="🔬 คู่มือวินิจฉัยและแก้ไขรสชาติกาแฟ (Under vs Over Extraction)",
+                alt_text="🔬 คู่มือวินิจฉัยและแก้ไขรสชาติกาแฟ (Under vs Over Extraction & Channeling)",
                 contents=flex_content,
-                quick_reply=quick_reply_obj
+                quick_reply=quick_reply
             )
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
-        # Intent C: Standard RAG Question Answering
+        # Intent D: Standard RAG Question Answering
         output = rag_chain.answer_question(user_text, session_id=user_id)
-        reply_text = output["answer"]
+        raw_answer = output["answer"]
+
+        # Format with official Barista card header for standard questions
+        is_greeting = any(w in clean_text for w in ["สวัสดี", "หวัดดี", "ดีครับ", "ดีค่ะ", "hello", "hi"])
+        if is_greeting:
+            # Send welcome flex card on friendly greetings
+            flex_content = create_welcome_flex()
+            quick_reply = get_line_sdk_quick_reply(user_text, raw_answer)
+            flex_msg = FlexSendMessage(
+                alt_text="☕ ยินดีต้อนรับสู่ Chongpenyang Barista AI",
+                contents=flex_content,
+                quick_reply=quick_reply
+            )
+            line_bot_api.reply_message(event.reply_token, flex_msg)
+            return
+
+        if not output.get("guardrail_triggered", False):
+            display_q = user_text if len(user_text) <= 50 else (user_text[:47] + "...")
+            reply_text = (
+                f"☕ Chongpenyang Barista AI\n"
+                f"คู่มือประกอบการฝึกอบรม หลักสูตรบาริสต้ามืออาชีพ\n"
+                f"━━━━━━━━━━━━━━━━━━━━\n"
+                f"❓ {display_q}\n\n"
+                f"{raw_answer}"
+            )
+        else:
+            reply_text = raw_answer
 
         # Limit to 4900 chars (LINE limit is 5000)
         if len(reply_text) > 4900:
             reply_text = reply_text[:4900] + "..."
 
-        text_msg = TextSendMessage(
-            text=reply_text,
-            quick_reply=quick_reply_obj
-        )
+        quick_reply = get_line_sdk_quick_reply(user_text, raw_answer)
+        text_msg = TextSendMessage(text=reply_text, quick_reply=quick_reply)
         line_bot_api.reply_message(event.reply_token, text_msg)
 
 

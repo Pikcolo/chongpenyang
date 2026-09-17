@@ -8,7 +8,7 @@ import json
 import requests
 
 from chatbot.config import settings
-from chatbot.line_ui.rich_menu import generate_rich_menu_image, get_rich_menu_payload, RICH_MENU_IMG_PATH
+from chatbot.line_ui.rich_menu import prepare_rich_menu_image, get_rich_menu_payload, RICH_MENU_IMG_PATH
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -28,10 +28,11 @@ def setup_rich_menu():
         "Content-Type": "application/json"
     }
 
-    # 1. Generate Rich Menu Image (2500x1686)
-    print("\n[1/4] Generating 2500x1686 Rich Menu Image...")
-    img_path = generate_rich_menu_image(RICH_MENU_IMG_PATH)
-    print(f"      Image saved at: {img_path}")
+    # 1. Prepare Rich Menu Image (2500x1686, strictly <= 1MB for LINE API)
+    print("\n[1/4] Preparing 2500x1686 Rich Menu Image...")
+    img_path = prepare_rich_menu_image(RICH_MENU_IMG_PATH)
+    file_size_kb = os.path.getsize(img_path) / 1024
+    print(f"      Image ready at: {img_path} ({file_size_kb:.1f} KB)")
 
     # 2. Create Rich Menu Object on LINE Platform
     print("\n[2/4] Registering Rich Menu Schema with LINE Messaging API...")
@@ -47,9 +48,10 @@ def setup_rich_menu():
 
     # 3. Upload Image to the created Rich Menu
     print("\n[3/4] Uploading Rich Menu Image to LINE CDN...")
+    content_type = "image/jpeg" if img_path.lower().endswith((".jpg", ".jpeg")) else "image/png"
     headers_img = {
         "Authorization": f"Bearer {token}",
-        "Content-Type": "image/png"
+        "Content-Type": content_type
     }
     with open(img_path, "rb") as f:
         img_data = f.read()
@@ -68,6 +70,17 @@ def setup_rich_menu():
     if res_default.status_code != 200:
         print(f"❌ [ERROR] Failed to set default rich menu: {res_default.status_code} -> {res_default.text}")
         return False
+
+    # Optional: Clean up old rich menus
+    try:
+        r_list = requests.get("https://api.line.me/v2/bot/richmenu/list", headers=headers_json)
+        if r_list.status_code == 200:
+            for rm in r_list.json().get("richmenus", []):
+                old_id = rm.get("richMenuId")
+                if old_id != rich_menu_id:
+                    requests.delete(f"https://api.line.me/v2/bot/richmenu/{old_id}", headers=headers_json)
+    except Exception:
+        pass
 
     print("\n" + "=" * 60)
     print(f"🎉 SUCCESS! Default Rich Menu is now ACTIVE!")

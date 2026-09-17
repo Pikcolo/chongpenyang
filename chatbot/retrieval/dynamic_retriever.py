@@ -72,31 +72,25 @@ class DynamicHybridRetriever:
         max_char_budget = budget * 3
 
         selected_items = []
-        seen_parents = set()
+        seen_contents = set()
 
         for doc, score in ranked_docs:
-            parent_id = doc.metadata.get("parent_id")
-            parent_content = doc.metadata.get("parent_content")
-            
-            # Prefer parent context if not already added and fits budget
-            content_to_use = doc.page_content
-            use_parent = False
-            if parent_content and parent_id and parent_id not in seen_parents:
-                if (current_char_count + len(parent_content)) <= max_char_budget:
-                    content_to_use = parent_content
-                    use_parent = True
-                    seen_parents.add(parent_id)
+            content_to_use = doc.page_content.strip()
+            if not content_to_use:
+                continue
+
+            # Deduplicate near-identical snippets
+            content_hash = content_to_use[:120]
+            if content_hash in seen_contents:
+                continue
+            seen_contents.add(content_hash)
 
             char_len = len(content_to_use)
             if current_char_count + char_len > max_char_budget and selected_items:
-                # If cannot fit, break or keep child if child fits
-                if (current_char_count + len(doc.page_content)) <= max_char_budget:
-                    content_to_use = doc.page_content
-                    char_len = len(content_to_use)
-                else:
-                    continue
+                continue
 
             current_char_count += char_len
+            use_parent = False
             selected_items.append({
                 "content": content_to_use,
                 "score": float(score),
@@ -138,6 +132,14 @@ class DynamicHybridRetriever:
             reranked = self.reranker.rerank(query, fused, top_n=dynamic_k)
         else:
             reranked = fused[:dynamic_k]
+
+        # Prune low-relevance distractor chunks (Lost-in-the-Middle prevention)
+        if reranked:
+            top_score = reranked[0][1]
+            score_cutoff = top_score * 0.40
+            filtered_reranked = [item for item in reranked if item[1] >= score_cutoff]
+            if filtered_reranked:
+                reranked = filtered_reranked
 
         # 5. Token Budget Management & Context Assembly
         budgeted_contexts = self.manage_token_budget(reranked)

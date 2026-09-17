@@ -97,17 +97,25 @@ class RAGMetricsEvaluator:
                 faithfulness_scores.append(1.0)
                 continue
 
-            # Split prediction into sentences
+            # Split prediction into sentences / key lines
             sentences = [s.strip() for s in pred.split("\n") if len(s.strip()) > 10]
             if not sentences:
                 sentences = [pred]
 
-            context_blob = " ".join(contexts)
-            sent_embs = self.sbert.encode(sentences, normalize_embeddings=True)
-            ctx_emb = self.sbert.encode([context_blob], normalize_embeddings=True)[0]
+            # Filter valid context strings
+            clean_contexts = [c.strip() for c in contexts if len(c.strip()) > 10]
+            if not clean_contexts:
+                faithfulness_scores.append(0.5)
+                continue
 
-            sims = np.dot(sent_embs, ctx_emb)
-            avg_faithfulness = float(np.mean(np.clip(sims, 0.0, 1.0)))
+            sent_embs = self.sbert.encode(sentences, normalize_embeddings=True)
+            ctx_embs = self.sbert.encode(clean_contexts, normalize_embeddings=True)
+
+            # Similarity matrix: [num_sentences, num_contexts]
+            sim_matrix = np.dot(sent_embs, ctx_embs.T)
+            # For each sentence, its faithfulness is the maximum similarity to ANY retrieved context chunk
+            max_sim_per_sentence = np.max(sim_matrix, axis=1)
+            avg_faithfulness = float(np.mean(np.clip(max_sim_per_sentence, 0.0, 1.0)))
             faithfulness_scores.append(avg_faithfulness)
 
         return faithfulness_scores
