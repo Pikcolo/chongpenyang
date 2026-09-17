@@ -232,11 +232,7 @@ if handler:
             show_line_loading_animation(user_id, seconds=25)
 
         # Intent A: Welcome Card & Table of Contents (5 Modules)
-        # Only trigger if user explicitly asks for table of contents, module overview, or starts bot
-        is_toc_request = clean_text in ["สารบัญ", "5 โมดูล", "ภาพรวมหลักสูตร", "คู่มือบาริสต้ามืออาชีพ", "เริ่มต้น", "start", "help", "เมนูหลัก"] or \
-                         (len(clean_text) <= 40 and any(w in clean_text for w in ["ดูสารบัญ", "ขอสารบัญ", "สรุป 5 โมดูล", "ภาพรวมหลักสูตร", "เปิดเมนู", "สารบัญ 5 โมดูล"]))
-
-        if is_toc_request:
+        if any(w in clean_text for w in ["สารบัญ", "5 โมดูล", "ภาพรวมหลักสูตร", "คู่มือบาริสต้ามืออาชีพ", "โมดูล", "เริ่มต้น"]):
             flex_content = create_welcome_flex()
             quick_reply = get_line_sdk_quick_reply(user_text, "สารบัญ 5 โมดูลหลักสูตรบาริสต้ามืออาชีพ")
             flex_msg = FlexSendMessage(
@@ -248,10 +244,7 @@ if handler:
             return
 
         # Intent B: Popular Drinks Carousel
-        is_carousel_request = clean_text in ["เมนูเครื่องดื่ม", "แนะนำสูตรเมนู", "สูตรเมนูยอดนิยม", "carousel"] or \
-                              (len(clean_text) <= 25 and any(w in clean_text for w in ["ดูเมนูเครื่องดื่ม", "ขอสูตรเมนูยอดนิยม", "สไลด์เมนู", "เมนูกาแฟยอดนิยม"]))
-
-        if is_carousel_request:
+        if any(w in clean_text for w in ["เมนูเครื่องดื่ม", "แนะนำสูตรเมนู", "สูตรเมนูยอดนิยม", "carousel"]):
             flex_content = create_recipes_carousel_flex()
             quick_reply = get_line_sdk_quick_reply(user_text, "สูตรเมนูเครื่องดื่มยอดนิยมตามคู่มือ")
             flex_msg = FlexSendMessage(
@@ -263,10 +256,7 @@ if handler:
             return
 
         # Intent C: Extraction Diagnosis / Troubleshoot Card
-        is_troubleshoot_request = clean_text in ["วิเคราะห์รสชาติ", "แก้อาการ", "troubleshoot", "วินิจฉัยรสชาติ"] or \
-                                  (len(clean_text) <= 25 and any(w in clean_text for w in ["วิเคราะห์รสชาติกาแฟ", "การวินิจฉัยการสกัด", "การ์ดแก้อาการ"]))
-
-        if is_troubleshoot_request:
+        if any(w in clean_text for w in ["วิเคราะห์รสชาติ", "แก้อาการ", "รสเปรี้ยวเกินไป", "ขมเกินไป", "under", "over"]):
             flex_content = create_troubleshoot_flex()
             quick_reply = get_line_sdk_quick_reply(user_text, "วิเคราะห์รสชาติและแก้ไขการสกัด")
             flex_msg = FlexSendMessage(
@@ -277,24 +267,16 @@ if handler:
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
-        # Intent D: Check pure greeting vs question
-        # If user is asking a real question (contains question words or technical terms), ALWAYS answer with RAG!
-        import re
-        question_words = ["?", "คือ", "อะไร", "เท่าไร", "เท่าใด", "อย่างไร", "ทำไม", "แชมป์", "สูตร", "วิธี", "ช่วย", "ทำยังไง", "ขอ", "แนะนำ"]
-        has_question = any(qw in clean_text for qw in question_words) or len(clean_text) > 25
+        # Intent D: Standard RAG Question Answering
+        output = rag_chain.answer_question(user_text, session_id=user_id)
+        raw_answer = output["answer"]
 
-        is_greeting = False
-        if not has_question:
-            thai_greetings = ["สวัสดี", "หวัดดี", "ดีครับ", "ดีค่ะ", "ดีจ้า"]
-            if any(clean_text.startswith(g) or clean_text == g for g in thai_greetings):
-                is_greeting = True
-            elif re.search(r'\b(hi|hello|hey)\b', clean_text):
-                is_greeting = True
-
+        # Format with official Barista card header for standard questions
+        is_greeting = any(w in clean_text for w in ["สวัสดี", "หวัดดี", "ดีครับ", "ดีค่ะ", "hello", "hi"])
         if is_greeting:
-            # Send welcome flex card on pure friendly greetings
+            # Send welcome flex card on friendly greetings
             flex_content = create_welcome_flex()
-            quick_reply = get_line_sdk_quick_reply(user_text, "สวัสดีครับ มีอะไรให้ Chongpenyang Barista AI ช่วยเหลือไหมครับ?")
+            quick_reply = get_line_sdk_quick_reply(user_text, raw_answer)
             flex_msg = FlexSendMessage(
                 alt_text="☕ ยินดีต้อนรับสู่ Chongpenyang Barista AI",
                 contents=flex_content,
@@ -302,10 +284,6 @@ if handler:
             )
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
-
-        # Intent E: Standard RAG Question Answering
-        output = rag_chain.answer_question(user_text, session_id=user_id)
-        raw_answer = output["answer"]
 
         if not output.get("guardrail_triggered", False):
             display_q = user_text if len(user_text) <= 50 else (user_text[:47] + "...")

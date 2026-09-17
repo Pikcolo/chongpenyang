@@ -60,7 +60,8 @@ def main():
                 print("👋 ขอบคุณที่ใช้งาน SmartDoc Barista AI ครับ!")
                 break
             if user_input.lower() == "clear":
-                print("🧹 ระบบทำงานในโหมด Stateless (ไม่เก็บประวัติการสนทนาอยู่แล้วครับ)")
+                rag_chain.conversation_memory[session_id] = []
+                print("🧹 ล้างประวัติการสนทนาเรียบร้อยแล้ว")
                 continue
 
             print("🔍 กำลังค้นหาข้อมูลและประมวลผลคำตอบ...")
