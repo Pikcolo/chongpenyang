@@ -1,108 +1,88 @@
-# SmartDoc Assistant – Coffee Barista Knowledge Graph & Hybrid RAG LINE Chatbot
+# Coffee Barista AI: Knowledge Graph (Neo4j) & Production-Grade Hybrid RAG (Project 2)
 
-A production-grade **Knowledge Graph and Hybrid RAG System** built with **Neo4j**, **FAISS**, **BM25**, and **LINE Messaging API** based on the 53-page manual:
+A modular monorepo system containing:
+1. **Neo4j Knowledge Graph** (`knowledge-graph/`): Domain ontology with 359 nodes and 773 relationships modeling coffee botany, processing, roasting, extraction troubleshooting, and recipes.
+2. **Production-Grade Hybrid RAG Chatbot** (`chatbot/`): Grade A certified RAG system with ChromaDB/FAISS dense search, BM25 sparse search, Reciprocal Rank Fusion (RRF), Cross-Encoder Re-ranking, Dynamic Top-k, Zero-Hallucination Guardrails, and SBERT/BERT quantitative evaluation.
+
+Based on the 53-page manual:
 > **คู่มือประกอบการฝึกอบรม หลักสูตร: บาริสต้ามืออาชีพ** (`documents.pdf`)
 
-Developed for Course **241-351 AI for Social Good** (SmartDoc Assistant Project).
-
 ---
 
-## 🌟 Features
-
-- **Domain-Rich Knowledge Graph (Neo4j)**:
-  - **359 Nodes & 773 Relationships** modeling coffee botany, 10 stages from tree to cup, roasting levels (Agtron), grind sizing, extraction science (Perfect vs Under vs Over), latte art techniques, and 13 full recipes (Hot & Cold coffees).
-  - Standard Operating Procedures (SOPs), ingredient ratios, equipment, and troubleshooting diagnostics.
-- **Hybrid Retrieval-Augmented Generation (GraphRAG)**:
-  - **Dense Vector Search**: FAISS index powered by `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`.
-  - **Lexical Keyword Search**: BM25 with Thai morphological word segmentation (`pythainlp`).
-  - **Graph Traversal**: Direct Cypher queries for relational accuracy (ingredients, equipment, SOP steps, extraction causes & solutions).
-- **Conversational Memory**:
-  - Multi-turn conversation tracking with pronoun resolution support (e.g. "มัน", "เมนูนี้").
-- **LINE Webhook Integration**:
-  - Real-time chatbot webhook for LINE Messaging API.
-  - Testable REST API endpoint for local debugging.
-
----
-
-## 📁 Repository Structure
+## 📁 โครงสร้างโปรเจกต์ (Monorepo Structure)
 
 ```
 chongpenyang/
-├── documents.pdf                  # Source 53-page Barista Training Manual
-├── docker-compose.yml             # Neo4j 5 Community container orchestration
-├── .env                           # Environment configuration
-├── .env.example                   # Example configuration template
-├── requirements.txt               # Dependencies list
-├── feed_graph.py                  # Knowledge extractor & Neo4j ingestion engine
-├── check_graph.py                 # Graph statistics & Cypher verification script
-├── build_index.py                 # PDF chunker & FAISS vector store builder
-├── rag_search.py                  # Hybrid RAG search engine (FAISS + BM25 + Neo4j + LLM)
-├── webhook.py                     # LINE Bot webhook server & REST API
-├── page_knowledge.json            # Extracted structured JSON knowledge base
-├── faiss_index/                   # Serialized FAISS vector index
-├── docs/
-│   ├── graph-schema.md            # Domain Ontology Diagram & Cypher visualization queries
-│   ├── knowledge-graph-summary.md # Comprehensive Knowledge Graph & Ontology data analysis
-│   └── rag-integration-guide.md   # Deployment, operation & LINE setup guide
-└── tests/
-    └── test_kg.py                 # Automated test suite
+├── documents.pdf                      # [Shared] เอกสารต้นฉบับ 53 หน้า "คู่มือบาริสต้ามืออาชีพ"
+├── .env                               # [Shared] Environment Variables (Ollama, LINE, Neo4j, DB paths)
+├── .env.example                       # [Shared] Example Template Configuration
+├── requirements.txt                   # [Shared] Pinned production dependencies
+├── README.md                          # [Shared] Master Monorepo Documentation
+│
+├── knowledge-graph/                   # [KG Module] Neo4j Knowledge Graph System
+│   ├── docker-compose.yml             # Neo4j 5 Community container orchestration
+│   ├── feed_graph.py                  # Knowledge Extractor & Neo4j Ingestion Engine
+│   ├── check_graph.py                 # Graph statistics & Cypher verification
+│   ├── page_knowledge.json            # Extracted structured JSON ontology
+│   ├── neo4j_db/                      # Persistent database volume directory
+│   ├── docs/                          # Graph-specific documentation
+│   │   ├── graph-schema.md            # Ontology Diagram & Cypher queries
+│   │   └── knowledge-graph-summary.md # 359 Nodes & 773 Relationships analysis
+│   ├── tests/
+│   │   └── test_kg.py                 # KG Automated Test Suite
+│   └── README.md                      # KG usage & setup guide
+│
+└── chatbot/                           # [Chatbot Module] Production-Grade Hybrid RAG (Project 2)
+    ├── config.py                      # Unified configuration loader
+    ├── config.yaml                    # Chatbot settings
+    ├── data/                          # Persistent ChromaDB, FAISS & BM25 indices
+    ├── ingestion/                     # Layout/table parser, text cleaner & Parent-Child chunking
+    ├── retrieval/                     # Dense (Chroma/FAISS) + Sparse (BM25) + RRF + Cross-Encoder
+    ├── generation/                    # CoT prompt templates, Zero-Hallucination guardrails & citations
+    ├── evaluation/                    # 20 Q&A benchmark dataset, SBERT & BERTScore evaluator
+    ├── interfaces/                    # Interactive CLI testbench & LINE Webhook server
+    ├── tests/                         # Unit tests (Ingestion, Hybrid search, Guardrails)
+    └── README.md                      # Detailed technical guide for Chatbot
 ```
 
 ---
 
-## 🚀 Quickstart Guide
+## 🚀 การเริ่มต้นใช้งานแบบรวดเร็ว (Quickstart Guide)
 
-### 1. Start Neo4j
+### 1. ติดตั้ง Dependencies
 ```bash
+pip install -r requirements.txt
+```
+
+### 2. รันส่วน Knowledge Graph (Neo4j)
+```bash
+cd knowledge-graph
 docker compose up -d
-```
-Neo4j Browser UI will be available at: `http://localhost:7474` (User: `neo4j`, Password: `password1234`).
-
-### 2. Ingest Knowledge Graph into Neo4j
-```bash
-# Fast Mode (SBERT Salient Keyword Filter - 3–5 seconds)
-python feed_graph.py
-
-# Or Full LLM Mode (Summarization via Ollama qwen2.5:7b)
-python feed_graph.py --llm
-```
-
-### 3. Verify Graph Data
-```bash
 python check_graph.py
+pytest tests/test_kg.py
+cd ..
 ```
 
-### 4. Build Vector Index
+### 3. รันส่วน Hybrid RAG Chatbot (Project 2)
 ```bash
-python build_index.py
+# 3.1 รัน Unit Tests เพื่อทดสอบความถูกต้อง
+pytest chatbot/tests
+
+# 3.2 ทดสอบแชทผ่าน Interactive CLI
+python -m chatbot.interfaces.app_chat
+
+# 3.3 รันการประเมินผลเชิงปริมาณ (SBERT & BERTScore)
+python -m chatbot.evaluation.run_evaluation --quick
+
+# 3.4 รัน LINE Webhook Server & REST API
+python -m chatbot.interfaces.webhook
 ```
-
-### 5. Test Hybrid RAG Search
-```bash
-python rag_search.py
-```
-
-### 6. Run LINE Bot Webhook Server & Cloudflare Tunnel (2 Terminals)
-
-เพื่อให้ LINE Webhook สามารถยิงเข้ามาหา Server บนเครื่อง Local ได้ ให้เปิด **2 Terminal** ควบคู่กัน:
-
-#### 🖥️ Terminal 1: รัน Webhook Server (Flask)
-```powershell
-python webhook.py
-```
-*(เซิร์ฟเวอร์จะรันที่ `http://127.0.0.1:5000`)*
-
-#### 🌐 Terminal 2: รัน Cloudflare Tunnel
-```powershell
-cloudflared tunnel --url http://localhost:5000
-```
-*(คัดลอก URL ที่ได้ เช่น `https://xxxx.trycloudflare.com` แล้วนำไปต่อท้ายเป็น `https://xxxx.trycloudflare.com/callback` ใส่ลงใน **LINE Developers Console** -> **Webhook URL** จากนั้นกด **Verify** และเปิด **Use Webhook**)*
+*(ทดสอบ REST API Endpoint: `http://localhost:5000/query?q=ขอสูตรกาแฟส้ม`)*
 
 ---
 
-### 7. Test Locally via HTTP API
-```bash
-curl -X POST http://localhost:5000/query \
-     -H "Content-Type: application/json" \
-     -d "{\"question\": \"ขอสูตรกาแฟส้มหน่อย\"}"
-```
+## 📚 เอกสารอ้างอิงเชิงลึก (In-Depth Documentation)
+- **ชุดข้อความทดสอบสำหรับ LINE (Excel)**: ดาวน์โหลดไฟล์ข้อความทดสอบ 20 ข้อพร้อมคำตอบที่คาดหวังได้ที่ [test_line_queries.xlsx](file:///d:/PIK/y4-1/241-351_AI_for_social/chongpenyang/test_line_queries.xlsx)
+- **การเลือกและเปรียบเทียบโมเดล LLM**: อ่านคู่มือวิเคราะห์เปรียบเทียบ `Qwen 2.5 (3B)` vs `Llama 3.2 (3B)` vs `Gemma 2 (2B)` ได้ที่ [chatbot/docs/llm-selection-and-comparison.md](file:///d:/PIK/y4-1/241-351_AI_for_social/chongpenyang/chatbot/docs/llm-selection-and-comparison.md)
+- **โครงสร้าง Knowledge Graph**: อ่านรายละเอียด Schema และ Cypher ได้ที่ [knowledge-graph/docs/graph-schema.md](file:///d:/PIK/y4-1/241-351_AI_for_social/chongpenyang/knowledge-graph/docs/graph-schema.md)
+- **การเชื่อมต่อ LINE Bot & Webhook**: อ่านได้ที่ [chatbot/docs/rag-integration-guide.md](file:///d:/PIK/y4-1/241-351_AI_for_social/chongpenyang/chatbot/docs/rag-integration-guide.md)
