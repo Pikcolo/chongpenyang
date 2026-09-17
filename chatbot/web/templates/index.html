@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chongpenyang Barista AI - Hybrid RAG Simulator & Inspector</title>
+    <meta name="description" content="Production-Grade Hybrid RAG Web Simulator and LINE Bot Assistant for Professional Barista Training Manual">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar: RAG Diagnostics & Telemetry Inspector -->
+        <aside class="inspector-sidebar">
+            <div class="brand-header">
+                <div class="brand-logo">
+                    <svg viewBox="0 0 100 100" width="42" height="42">
+                        <circle cx="50" cy="50" r="48" fill="#2C1810" />
+                        <circle cx="50" cy="50" r="44" fill="none" stroke="#D4A373" stroke-width="2.5" />
+                        <!-- Coffee Cup Icon -->
+                        <path d="M28 42 H64 V62 C64 70 56 76 46 76 C36 76 28 70 28 62 Z" fill="#D4A373" />
+                        <path d="M64 46 H72 C76 46 78 50 78 54 C78 58 76 62 72 62 H64" fill="none" stroke="#D4A373" stroke-width="3" stroke-linecap="round" />
+                        <!-- Steam lines -->
+                        <path d="M38 34 Q40 26 38 20" stroke="#E6CCB2" stroke-width="2" stroke-linecap="round" fill="none" />
+                        <path d="M46 32 Q48 24 46 18" stroke="#E6CCB2" stroke-width="2" stroke-linecap="round" fill="none" />
+                        <path d="M54 34 Q56 26 54 20" stroke="#E6CCB2" stroke-width="2" stroke-linecap="round" fill="none" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="brand-title">Chongpenyang Barista</h1>
+                    <p class="brand-subtitle">Production-Grade Hybrid RAG v2.5</p>
+                </div>
+            </div>
+
+            <!-- RAG Telemetry Card -->
+            <div class="panel-card" id="ragTelemetryCard">
+                <div class="panel-card-header">
+                    <span class="panel-icon">⚡</span>
+                    <h3>RAG Realtime Diagnostics</h3>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Active LLM:</span>
+                    <span class="metric-value badge badge-model" id="metricModel">qwen2.5:3b</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Retrieval Engine:</span>
+                    <span class="metric-value badge badge-hybrid" id="metricRetrieval">Chroma + BM25 + RRF</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Re-ranker:</span>
+                    <span class="metric-value badge badge-rerank" id="metricReranker">Cross-Encoder</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Dynamic Top-k:</span>
+                    <span class="metric-value" id="metricTopK">k = 5</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Re-rank Confidence:</span>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="confidenceBar" style="width: 0%;"></div>
+                    </div>
+                    <span class="metric-value" id="metricConfidence">0.0%</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Latency:</span>
+                    <span class="metric-value badge badge-latency" id="metricLatency">0 ms</span>
+                </div>
+
+                <hr class="panel-divider">
+
+                <h4 class="sub-heading">Retrieved Context Chunks</h4>
+                <div class="chunks-container" id="chunksContainer">
+                    <div class="chunk-pill-placeholder">ยังไม่มีการค้นหา (Waiting for query)</div>
+                </div>
+            </div>
+
+            <!-- Preset Test Prompts -->
+            <div class="panel-card">
+                <div class="panel-card-header">
+                    <span class="panel-icon">🎯</span>
+                    <h3>1-Click Test Prompts</h3>
+                </div>
+                <p class="panel-desc">คลิกเพื่อทดสอบชุดคำถามตามเกณฑ์ Rubric Score:</p>
+                <div class="preset-buttons">
+                    <button class="btn-preset" onclick="sendPreset('สูตรและเทคนิคการสกัด Perfect Shot เอสเพรสโซ่')">
+                        <span>☕</span> Perfect Shot (9 บาร์ & 90-96°C)
+                    </button>
+                    <button class="btn-preset" onclick="sendPreset('เทคนิคการสตีมนมและทำลาเต้อาร์ต อุณหภูมิเท่าไร?')">
+                        <span>🥛</span> สตีมนม & ทำไมโครโฟม
+                    </button>
+                    <button class="btn-preset" onclick="sendPreset('วิธีปรับเบอร์บดเครื่องบดกาแฟให้เหมาะสม')">
+                        <span>⚙️</span> การปรับเบอร์บด (Grind Calibration)
+                    </button>
+                    <button class="btn-preset" onclick="sendPreset('ขอสูตรกาแฟส้ม (Black Orange Coffee)')">
+                        <span>🍊</span> สูตรกาแฟส้ม (Black Orange)
+                    </button>
+                    <button class="btn-preset" onclick="sendPreset('วิธีแก้ปัญหากาแฟรสชาติเปรี้ยวเกินไปหรือขมเกินไป')">
+                        <span>🔬</span> แก้ Under / Over Extraction
+                    </button>
+                    <button class="btn-preset btn-preset-alert" onclick="sendPreset('แนะนำวิธีทำเค้กช็อกโกแลตลาวาหน่อยครับ')">
+                        <span>🛡️</span> ทดสอบ Zero-Hallucination Guardrail
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Chat Simulator Screen -->
+        <main class="chat-main">
+            <!-- Chat Header -->
+            <header class="chat-header">
+                <div class="chat-header-info">
+                    <div class="status-indicator"></div>
+                    <div>
+                        <h2>Barista Assistant (Simulator)</h2>
+                        <p class="chat-sub">คู่มือประกอบการฝึกอบรม หลักสูตร: บาริสต้ามืออาชีพ</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-icon" onclick="triggerCarousel()" title="แสดงเมนูเครื่องดื่ม (Carousel)">🍹 เมนู Carousel</button>
+                    <button class="btn-icon" onclick="triggerTroubleshoot()" title="การวินิจฉัยสกัดกาแฟ (Flex)">🔬 วินิจฉัย Flex</button>
+                    <button class="btn-icon btn-clear" onclick="clearChat()" title="ล้างการสนทนา">🗑️ ล้างแชต</button>
+                </div>
+            </header>
+
+            <!-- Chat Message Thread -->
+            <section class="chat-messages" id="chatMessages">
+                <!-- Dynamic messages injected here -->
+            </section>
+
+            <!-- Quick Replies Bar -->
+            <div class="quick-replies-bar" id="quickRepliesBar">
+                <!-- Dynamic Quick Reply chips injected here -->
+            </div>
+
+            <!-- Input Area -->
+            <footer class="chat-input-area">
+                <form id="chatForm" onsubmit="handleFormSubmit(event)">
+                    <input 
+                        type="text" 
+                        id="userInput" 
+                        placeholder="พิมพ์คำถามเกี่ยวกับสูตรกาแฟ, อุณหภูมิ, แรงดัน, การสตีมนม..." 
+                        autocomplete="off"
+                        required
+                    />
+                    <button type="submit" id="sendBtn" class="btn-send">
+                        <span>ส่งข้อความ</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                        </svg>
+                    </button>
+                </form>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Script -->
+    <script src="/static/js/chat.js"></script>
+</body>
+</html>

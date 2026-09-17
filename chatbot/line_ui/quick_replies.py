@@ -1,17 +1,52 @@
 """
-Quick Reply Builder for LINE Bot.
-Provides one-tap instant command triggers for seamless NLP navigation.
+Contextual Quick Reply generator for Chongpenyang Barista Assistant.
+Provides quick-action chips for fast, seamless user interaction on LINE and Web.
 """
+from typing import List, Dict, Any
 
-from linebot.models import QuickReply, QuickReplyButton, MessageAction, PostbackAction
+BARISTA_QUICK_REPLY_ITEMS = [
+    {
+        "label": "☕ Perfect Shot",
+        "text": "สูตรและเทคนิคการสกัด Perfect Shot เอสเพรสโซ่"
+    },
+    {
+        "label": "🥛 เทคนิคสตีมนม",
+        "text": "เทคนิคการสตีมนมและทำลาเต้อาร์ต อุณหภูมิเท่าไร?"
+    },
+    {
+        "label": "⚙️ ปรับเบอร์บด",
+        "text": "วิธีปรับเบอร์บดเครื่องบดกาแฟให้เหมาะสม"
+    },
+    {
+        "label": "🍊 สูตรกาแฟส้ม",
+        "text": "ขอสูตรกาแฟส้ม (Black Orange Coffee)"
+    },
+    {
+        "label": "🔬 แก้รสเปรี้ยว/ขม",
+        "text": "วิธีแก้ปัญหากาแฟรสชาติเปรี้ยวเกินไปหรือขมเกินไป"
+    },
+    {
+        "label": "📖 สารบัญคู่มือ",
+        "text": "สารบัญหัวข้อทั้งหมดในคู่มือบาริสต้ามืออาชีพ"
+    }
+]
 
-def get_barista_quick_replies() -> QuickReply:
-    """Returns persistent quick reply navigation buttons for Barista Chatbot."""
-    items = [
-        QuickReplyButton(action=MessageAction(label="☕ เมนูร้อน", text="ขอเมนูร้อน")),
-        QuickReplyButton(action=MessageAction(label="🧊 เมนูเย็น", text="ขอเมนูเย็น")),
-        QuickReplyButton(action=MessageAction(label="🎲 Top 5 แนะนำ", text="ขอ 5 เมนูแนะนำ")),
-        QuickReplyButton(action=MessageAction(label="⚠️ แก้กาแฟเปรี้ยว/ขม", text="กาแฟเปรี้ยวฝาดแก้ยังไง")),
-        QuickReplyButton(action=MessageAction(label="📖 Perfect Shot", text="ตัวแปรมาตรฐานการสกัดเอสเพรสโซ่")),
-    ]
-    return QuickReply(items=items)
+def get_barista_quick_replies() -> Dict[str, Any]:
+    """
+    Returns standard LINE v3 QuickReply JSON payload with 6 focused barista chips.
+    """
+    items = []
+    for item in BARISTA_QUICK_REPLY_ITEMS:
+        items.append({
+            "type": "action",
+            "action": {
+                "type": "message",
+                "label": item["label"],
+                "text": item["text"]
+            }
+        })
+    return {"items": items}
+
+def get_quick_reply_list() -> List[Dict[str, str]]:
+    """Returns a simple list of chips for Web UI simulator."""
+    return BARISTA_QUICK_REPLY_ITEMS

@@ -16,6 +16,7 @@ chongpenyang/
 ├── documents.pdf                      # [Shared] เอกสารต้นฉบับ 53 หน้า "คู่มือบาริสต้ามืออาชีพ"
 ├── .env                               # [Shared] Environment Variables (Ollama, LINE, Neo4j, DB paths)
 ├── .env.example                       # [Shared] Example Template Configuration
+├── config.yaml                        # [Shared] YAML Configuration parameters
 ├── requirements.txt                   # [Shared] Pinned production dependencies
 ├── README.md                          # [Shared] Master Monorepo Documentation
 │

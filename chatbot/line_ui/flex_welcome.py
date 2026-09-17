@@ -1,80 +1,120 @@
 """
-Welcome & Out-of-Domain Guardrail Flex Message Builders.
-Provides polite, helpful, and strictly on-brand barista messaging with Zero Hallucination.
+LINE Flex Message Welcome Bubble for Chongpenyang Barista Assistant.
+Renders an elegant barista-themed introduction card.
 """
-
 from typing import Dict, Any
 
-def build_welcome_flex() -> Dict[str, Any]:
-    """Generates an aesthetic welcome card for Barista Chatbot."""
-    bubble = {
+def create_welcome_flex() -> Dict[str, Any]:
+    """
+    Renders an elegant barista onboarding card with quick-action buttons.
+    """
+    return {
         "type": "bubble",
         "size": "mega",
-        "hero": {
-            "type": "image",
-            "url": "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=700&auto=format&fit=crop&q=80",
-            "size": "full",
-            "aspectRatio": "20:13",
-            "aspectMode": "cover"
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "CHONGPENYANG BARISTA AI",
+                    "weight": "bold",
+                    "size": "xs",
+                    "color": "#D4A373",
+                    "letterSpacing": "2px"
+                },
+                {
+                    "type": "text",
+                    "text": "คู่มือบาริสต้ามืออาชีพ ☕",
+                    "weight": "bold",
+                    "size": "xl",
+                    "color": "#FFFFFF",
+                    "margin": "sm"
+                },
+                {
+                    "type": "text",
+                    "text": "ระบบผู้ช่วยอัจฉริยะ Production-Grade Hybrid RAG",
+                    "size": "xs",
+                    "color": "#E6CCB2",
+                    "margin": "xs"
+                }
+            ],
+            "backgroundColor": "#2C1810",
+            "paddingAll": "20px"
         },
         "body": {
             "type": "box",
             "layout": "vertical",
-            "spacing": "sm",
-            "paddingAll": "20px",
             "contents": [
                 {
-                    "type": "box",
-                    "layout": "baseline",
-                    "contents": [
-                        {"type": "text", "text": "☕ CHONGPENYANG BARISTA AI", "size": "xxs", "color": "#ffffff", "weight": "bold"}
-                    ],
-                    "backgroundColor": "#78350f",
-                    "cornerRadius": "md",
-                    "paddingAll": "4px",
-                    "alignItems": "center",
-                    "justifyContent": "center"
-                },
-                {
                     "type": "text",
-                    "text": "สวัสดีครับ! ยินดีต้อนรับสู่ผู้ช่วยฝึกอบรมบาริสต้า",
+                    "text": "ยินดีต้อนรับสู่คู่มือฝึกอบรมบาริสต้ามืออาชีพ!",
                     "weight": "bold",
                     "size": "md",
-                    "color": "#1c1917",
-                    "wrap": True
+                    "color": "#212121"
                 },
                 {
                     "type": "text",
-                    "text": "ผมคือระบบช่วยสอนและค้นหาสูตรกาแฟ อ้างอิงจากหลักสูตรบาริสต้ามืออาชีพ คุณสามารถพิมพ์ถามสูตร, ขอคำแนะนำ 5 เมนูเด็ด, หรือปรึกษาปัญหาการสกัดได้ทันทีครับ",
-                    "size": "xs",
-                    "color": "#57534e",
-                    "wrap": True
+                    "text": "สอบถามสูตรเครื่องดื่ม เทคนิคการสกัด Perfect Shot การปรับเบอร์บด และการแก้ปัญหา Over/Under Extraction ตามมาตรฐานสากลได้ทันที",
+                    "size": "sm",
+                    "color": "#666666",
+                    "wrap": True,
+                    "margin": "md"
                 },
-                {"type": "separator", "margin": "md"},
                 {
-                    "type": "text",
-                    "text": "✨ เมนูด่วนแนะนำ:",
-                    "weight": "bold",
-                    "size": "xxs",
-                    "color": "#b45309"
+                    "type": "separator",
+                    "margin": "lg",
+                    "color": "#EEEEEE"
+                },
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "margin": "md",
+                    "spacing": "sm",
+                    "contents": [
+                        {
+                            "type": "box",
+                            "layout": "horizontal",
+                            "contents": [
+                                {"type": "text", "text": "🎯 อุณหภูมิสกัด:", "size": "xs", "color": "#888888", "flex": 4},
+                                {"type": "text", "text": "90 - 96 °C", "size": "xs", "color": "#2C1810", "weight": "bold", "flex": 5}
+                            ]
+                        },
+                        {
+                            "type": "box",
+                            "layout": "horizontal",
+                            "contents": [
+                                {"type": "text", "text": "⚡ แรงดันสกัด:", "size": "xs", "color": "#888888", "flex": 4},
+                                {"type": "text", "text": "9 - 10 บาร์ (Bar)", "size": "xs", "color": "#2C1810", "weight": "bold", "flex": 5}
+                            ]
+                        },
+                        {
+                            "type": "box",
+                            "layout": "horizontal",
+                            "contents": [
+                                {"type": "text", "text": "⏱️ เวลาสกัด:", "size": "xs", "color": "#888888", "flex": 4},
+                                {"type": "text", "text": "20 - 30 วินาที", "size": "xs", "color": "#2C1810", "weight": "bold", "flex": 5}
+                            ]
+                        }
+                    ]
                 }
-            ]
+            ],
+            "paddingAll": "20px"
         },
         "footer": {
             "type": "box",
             "layout": "vertical",
             "spacing": "sm",
-            "paddingAll": "16px",
             "contents": [
                 {
                     "type": "button",
                     "style": "primary",
-                    "color": "#78350f",
+                    "color": "#8B5A2B",
                     "height": "sm",
                     "action": {
                         "type": "message",
-                        "label": "🎲 5 เมนูแนะนำ (Top 5)",
-                        "text": "ขอ 5 เมนูแนะนำ"
+                        "label": "☕ สูตร Perfect Shot",
+                        "text": "สูตรและเทคนิคการสกัด Perfect Shot เอสเพรสโซ่"
                     }
                 },
                 {
@@ -83,85 +123,11 @@ def build_welcome_flex() -> Dict[str, Any]:
                     "height": "sm",
                     "action": {
                         "type": "message",
-                        "label": "⚠️ กาแฟเปรี้ยว/ขม แก้ยังไง",
-                        "text": "กาแฟเปรี้ยวฝาดแก้ยังไง"
+                        "label": "🍊 แนะนำเมนูเครื่องดื่ม",
+                        "text": "แนะนำสูตรเมนูเครื่องดื่มยอดนิยมตามคู่มือ"
                     }
                 }
-            ]
+            ],
+            "paddingAll": "15px"
         }
     }
-    return bubble
-
-def build_out_of_domain_flex(query: str = "") -> Dict[str, Any]:
-    """Generates a strictly guarded Zero Hallucination rejection card for out-of-domain queries."""
-    bubble = {
-        "type": "bubble",
-        "size": "mega",
-        "body": {
-            "type": "box",
-            "layout": "vertical",
-            "spacing": "md",
-            "paddingAll": "20px",
-            "contents": [
-                {
-                    "type": "box",
-                    "layout": "baseline",
-                    "contents": [
-                        {"type": "text", "text": "🛡️ ขอบเขตการให้บริการ (Out of Domain)", "size": "xxs", "color": "#ffffff", "weight": "bold"}
-                    ],
-                    "backgroundColor": "#64748b",
-                    "cornerRadius": "md",
-                    "paddingAll": "4px",
-                    "alignItems": "center",
-                    "justifyContent": "center"
-                },
-                {
-                    "type": "text",
-                    "text": "ขออภัยครับ คำถามนี้อยู่นอกเหนือขอบเขต",
-                    "weight": "bold",
-                    "size": "md",
-                    "color": "#1e293b",
-                    "wrap": True
-                },
-                {
-                    "type": "text",
-                    "text": "ระบบนี้ถูกฝึกฝนมาเพื่อเป็น 'คู่มือประกอบการฝึกอบรม หลักสูตรบาริสต้ามืออาชีพ' โดยเฉพาะ ซึ่งครอบคลุมเฉพาะเรื่องเมล็ดกาแฟ, เทคนิคการสกัด Espresso, การสตีมนม, การบำรุงรักษาเครื่อง และสูตรเครื่องดื่มกาแฟเท่านั้นครับ",
-                    "size": "xs",
-                    "color": "#475569",
-                    "wrap": True
-                },
-                {
-                    "type": "box",
-                    "layout": "vertical",
-                    "backgroundColor": "#f8fafc",
-                    "cornerRadius": "md",
-                    "paddingAll": "10px",
-                    "contents": [
-                        {"type": "text", "text": "💡 ลองเลือกถามเรื่องเหล่านี้แทน:", "weight": "bold", "size": "xxs", "color": "#0369a1"},
-                        {"type": "text", "text": "• สูตรกาแฟส้มสด หรือ Dirty Coffee\n• วิธีแก้ปัญหากาแฟเปรี้ยวฝาด / กาแฟขมไหม้\n• อุณหภูมิน้ำและแรงดันในการสกัดเอสเพรสโซ่\n• อุณหภูมิที่เหมาะสมในการสตีมนม", "size": "xxs", "color": "#334155", "wrap": True}
-                    ]
-                }
-            ]
-        },
-        "footer": {
-            "type": "box",
-            "layout": "horizontal",
-            "spacing": "sm",
-            "paddingAll": "12px",
-            "contents": [
-                {
-                    "type": "button",
-                    "style": "primary",
-                    "color": "#78350f",
-                    "height": "sm",
-                    "action": {
-                        "type": "message",
-                        "label": "☕ ดูเมนูแนะนำ",
-                        "text": "ขอ 5 เมนูแนะนำ"
-                    },
-                    "flex": 1
-                }
-            ]
-        }
-    }
-    return bubble
