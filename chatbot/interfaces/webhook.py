@@ -243,19 +243,19 @@ if handler:
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
-        # Intent B: Popular Drinks Carousel (MOD_04 SOP)
+        # Intent B: Popular Drinks Carousel
         if any(w in clean_text for w in ["เมนูเครื่องดื่ม", "แนะนำสูตรเมนู", "สูตรเมนูยอดนิยม", "carousel"]):
             flex_content = create_recipes_carousel_flex()
             quick_reply = get_line_sdk_quick_reply(user_text, "สูตรเมนูเครื่องดื่มยอดนิยมตามคู่มือ")
             flex_msg = FlexSendMessage(
-                alt_text="🍹 แนะนำสูตรเมนูเครื่องดื่มยอดนิยมตามคู่มือ (MOD_04 SOP)",
+                alt_text="🍹 แนะนำสูตรเมนูเครื่องดื่มยอดนิยมตามคู่มือ SOP",
                 contents=flex_content,
                 quick_reply=quick_reply
             )
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
-        # Intent C: Extraction Diagnosis / Troubleshoot Card (MOD_02)
+        # Intent C: Extraction Diagnosis / Troubleshoot Card
         if any(w in clean_text for w in ["วิเคราะห์รสชาติ", "แก้อาการ", "รสเปรี้ยวเกินไป", "ขมเกินไป", "under", "over"]):
             flex_content = create_troubleshoot_flex()
             quick_reply = get_line_sdk_quick_reply(user_text, "วิเคราะห์รสชาติและแก้ไขการสกัด")

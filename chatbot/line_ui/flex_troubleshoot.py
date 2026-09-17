@@ -31,7 +31,7 @@ def create_troubleshoot_flex() -> Dict[str, Any]:
                 },
                 {
                     "type": "text",
-                    "text": "คู่มือวินิจฉัยและแก้ไขรสชาติกาแฟ (MOD_02)",
+                    "text": "คู่มือวินิจฉัยและแก้ไขรสชาติกาแฟ",
                     "weight": "bold",
                     "size": "md",
                     "color": "#FFFFFF",

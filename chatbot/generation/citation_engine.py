@@ -47,8 +47,10 @@ class CitationEngine:
         for cite in citations[:4]:
             page = cite["page"]
             topic = cite["topic"]
-            # Clean up redundant prefix if already in topic
+            # Clean up redundant prefixes and MOD_ tags
             clean_topic = topic.replace("คู่มือประกอบการฝึกอบรม หลักสูตร: บาริสต้ามืออาชีพ", "").strip(" -:")
+            import re
+            clean_topic = re.sub(r"MOD_0?(\d):?\s*", r"หมวดที่ \1: ", clean_topic).strip(" -:")
             if not clean_topic:
                 clean_topic = "หลักสูตรบาริสต้ามืออาชีพ"
             lines.append(f"• หน้า {page} - {clean_topic}")

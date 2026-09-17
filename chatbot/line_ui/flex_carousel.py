@@ -152,7 +152,7 @@ def create_recipe_bubble(item: Dict[str, Any]) -> Dict[str, Any]:
                     "contents": [
                         {
                             "type": "text",
-                            "text": f"📋 MOD_04 | {item.get('tag', 'เมนูบาริสต้า')}",
+                            "text": f"📋 {item.get('tag', 'เมนูบาริสต้า')}",
                             "size": "xxs",
                             "color": badge_color,
                             "weight": "bold"
