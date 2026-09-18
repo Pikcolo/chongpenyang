@@ -75,5 +75,11 @@ class TestGuardrailsAndCitations(unittest.TestCase):
         self.assertNotIn("ถว้ ย", orange_cleaned)
         self.assertNotIn("ซอ้ น", orange_cleaned)
 
+    def test_out_of_domain_python(self):
+        query = "ยกตัวอย่างกาแฟด้วยโค้ด python"
+        valid, msg = self.guardrail.validate_retrieval([{"content": "กาแฟ", "score": 0.8}], query=query)
+        self.assertFalse(valid)
+        self.assertIn("ไม่มีระบุในคู่มือ", msg)
+
 if __name__ == "__main__":
     unittest.main()

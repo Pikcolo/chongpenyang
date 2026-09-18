@@ -128,3 +128,23 @@ def test_api_flex_troubleshoot_endpoint(client):
     data = res.get_json()
     assert "bubble" in data
     assert data["bubble"]["type"] == "bubble"
+
+
+def test_callback_invalid_signature(client):
+    """Test that invalid signature returns 400 Bad Request."""
+    res = client.post("/callback", data="{}", headers={"X-Line-Signature": "invalid"})
+    assert res.status_code == 400
+
+
+def test_callback_valid_signature_async(client, monkeypatch):
+    """Test that valid signature triggers handler.handle in async thread and returns 200."""
+    from chatbot.interfaces import webhook
+    called = []
+
+    monkeypatch.setattr(webhook.handler.parser.signature_validator, "validate", lambda body, sig: True)
+    monkeypatch.setattr(webhook.handler, "handle", lambda body, sig: called.append((body, sig)))
+
+    res = client.post("/callback", data='{"events":[]}', headers={"X-Line-Signature": "valid_sig"})
+    assert res.status_code == 200
+    assert res.data.decode("utf-8") == "OK"
+

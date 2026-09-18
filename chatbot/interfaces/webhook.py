@@ -186,24 +186,22 @@ def callback():
     signature = request.headers.get("X-Line-Signature", "")
     body = request.get_data(as_text=True)
 
+    # Validate signature synchronously before returning 200
     try:
-        events = handler.parser.parse(body, signature)
-    except InvalidSignatureError:
+        if not handler.parser.signature_validator.validate(body, signature):
+            abort(400)
+    except Exception:
         abort(400)
-    except Exception as e:
-        print(f"Error parsing webhook: {e}")
-        abort(500)
 
     # Process events in background thread to immediately return 200 OK to LINE/Cloudflare
     import threading
-    def _async_process(parsed_events):
-        for event in parsed_events:
-            try:
-                handler.__call__(event)
-            except Exception as err:
-                print(f"⚠️ Error in async event handler: {err}")
+    def _async_handle(body_data, sig):
+        try:
+            handler.handle(body_data, sig)
+        except Exception as err:
+            print(f"⚠️ Error in async event handler: {err}")
 
-    threading.Thread(target=_async_process, args=(events,), daemon=True).start()
+    threading.Thread(target=_async_handle, args=(body, signature), daemon=True).start()
 
     return "OK"
 

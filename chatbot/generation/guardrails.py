@@ -68,9 +68,23 @@ CHINESE_TERMS_MAP = {
 }
 
 OUT_OF_DOMAIN_KEYWORDS = [
-    "ต้มยำ", "ข้าวมันไก่", "ผัดไทย", "ส้มตำ", "พิซซ่า", "แฮมเบอร์เกอร์",
+    # Programming, Code & Technical scripts
+    "python", "javascript", "java", "c++", "c#", "html", "css", "sql", "php", "ruby", "swift", "golang", "rust",
+    "โค้ด", "code", "เขียนโค้ด", "เขียนโปรแกรม", "script", "สคริปต์", "โปรแกรมเมอร์", "developer", "coding",
+
+    # Non-coffee Cooking & Foods
+    "ต้มยำ", "ข้าวมันไก่", "ผัดไทย", "ส้มตำ", "พิซซ่า", "แฮมเบอร์เกอร์", "ก๋วยเตี๋ยว", "หมูกระทะ", "ชาบู", "อาหารตามสั่ง", "ทำเค้ก",
+
+    # Illicit Substances & Drugs
+    "ท่อม", "กระท่อม", "น้ำท่อม", "กัญชา", "กัญชง", "ยาบ้า", "ยาอี", "ยาเสพติด", "บุหรี่", "เหล้า", "เบียร์", "สุรา", "ไวน์",
+
+    # Finance, Stocks, Gambling & Politics
     "หุ้น", "ptt", "set50", "บิตคอยน์", "bitcoin", "crypto", "คริปโต",
-    "ฟุตบอล", "พรีเมียร์ลีก", "การเมือง", "เลือกตั้ง", "นายก"
+    "ฟุตบอล", "พรีเมียร์ลีก", "การเมือง", "เลือกตั้ง", "นายก", "หวย", "ลอตเตอรี่", "คาสิโน", "บาคาร่า",
+
+    # General Tasks & Prompt Injections
+    "การบ้าน", "แต่งกลอน", "เรียงความ", "แปลภาษา",
+    "system instruction", "system prompt", "ignore previous instructions", "jailbreak", "bypass"
 ]
 
 class GuardrailManager:
@@ -227,6 +241,10 @@ class GuardrailManager:
             return self.fallback_msg
 
         if self.is_out_of_domain_query(query):
+            return self.fallback_msg
+
+        # Strict code ban: If answer contains code blocks or programming syntax, reject as fallback
+        if "```" in answer or "def " in answer or "class " in answer:
             return self.fallback_msg
 
         # 1. Sanitize Chinese tokens and punctuation
