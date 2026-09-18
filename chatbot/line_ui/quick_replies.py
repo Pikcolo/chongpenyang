@@ -29,8 +29,8 @@ MOD_01_BEANS_ROAST_QUICK_REPLIES = [
 MOD_02_EXTRACTION_QUICK_REPLIES = [
     {"label": "☕ สกัด Perfect Shot", "text": "พารามิเตอร์การสกัด Perfect Shot เอสเพรสโซ่ในคู่มือคือเท่าไร?"},
     {"label": "🛡️ แก้ Channeling", "text": "Channeling คืออะไร เกิดจากอะไร และป้องกันอย่างไร?"},
-    {"label": "⚠️ กาแฟสกัดขาด (Under)", "text": "ทำไมกาแฟถึงมีรสชาติเปรี้ยวฝาด ครีม่าซีดจาง และน้ำกาแฟไหลเร็วเกินไป?"},
-    {"label": "⚠️ กาแฟสกัดเกิน (Over)", "text": "กาแฟมีรสขมไหม้ แห้งติดคอ น้ำกาแฟหยดช้า เกิดจากอะไรและแก้ยังไง?"},
+    {"label": "⚠️ กาแฟสกัดขาด Under", "text": "ทำไมกาแฟถึงมีรสชาติเปรี้ยวฝาด ครีม่าซีดจาง และน้ำกาแฟไหลเร็วเกินไป?"},
+    {"label": "⚠️ กาแฟสกัดเกิน Over", "text": "กาแฟมีรสขมไหม้ แห้งติดคอ น้ำกาแฟหยดช้า เกิดจากอะไรและแก้ยังไง?"},
     {"label": "🌡️ อุณหภูมิ & แรงดัน", "text": "อุณหภูมิน้ำและแรงดันในการสกัดเอสเพรสโซ่ที่ถูกต้องคือเท่าไร?"},
     {"label": "🔍 Bottomless ด้ามชง", "text": "ด้ามชงแบบ Bottomless (Naked Portafilter) มีประโยชน์อย่างไร?"},
     {"label": "🧼 การ Backflush", "text": "การ Backflush เครื่องชงกาแฟมีขั้นตอนอย่างไรและทำเพื่ออะไร?"},
@@ -69,8 +69,8 @@ MOD_05_EVAL_TEST_QUICK_REPLIES = [
 DEFAULT_BARISTA_QUICK_REPLIES = [
     {"label": "☕ สกัด Perfect Shot", "text": "พารามิเตอร์การสกัด Perfect Shot เอสเพรสโซ่ในคู่มือคือเท่าไร?"},
     {"label": "🛡️ แก้ Channeling", "text": "Channeling คืออะไร เกิดจากอะไร และป้องกันอย่างไร?"},
-    {"label": "⚠️ กาแฟสกัดขาด (Under)", "text": "ทำไมกาแฟถึงมีรสชาติเปรี้ยวฝาด ครีม่าซีดจาง และน้ำกาแฟไหลเร็วเกินไป?"},
-    {"label": "⚠️ กาแฟสกัดเกิน (Over)", "text": "กาแฟมีรสขมไหม้ แห้งติดคอ น้ำกาแฟหยดช้า เกิดจากอะไรและแก้ยังไง?"},
+    {"label": "⚠️ กาแฟสกัดขาด Under", "text": "ทำไมกาแฟถึงมีรสชาติเปรี้ยวฝาด ครีม่าซีดจาง และน้ำกาแฟไหลเร็วเกินไป?"},
+    {"label": "⚠️ กาแฟสกัดเกิน Over", "text": "กาแฟมีรสขมไหม้ แห้งติดคอ น้ำกาแฟหยดช้า เกิดจากอะไรและแก้ยังไง?"},
     {"label": "🍊 สูตรกาแฟส้ม", "text": "ขอสูตรกาแฟส้ม (Black Orange Coffee) ตามคู่มือ (หน้า 50)"},
     {"label": "🍑 สูตรกาแฟพีช", "text": "ขอสูตรกาแฟพีช (Peach Coffee) ตามคู่มือ (หน้า 48)"},
     {"label": "🍃 สูตรลาเต้มิ้นท์", "text": "ขอสูตรลาเต้มิ้นท์ตามคู่มือ (หน้า 49)"},
@@ -81,6 +81,11 @@ DEFAULT_BARISTA_QUICK_REPLIES = [
     {"label": "📖 สารบัญ 5 โมดูล", "text": "สรุปสารบัญหัวข้อและ 5 โมดูลในคู่มือบาริสต้ามืออาชีพ"}
 ]
 
+# Aliases for backwards compatibility with tests and older imports
+BEANS_ROAST_GRIND_QUICK_REPLIES = MOD_01_BEANS_ROAST_QUICK_REPLIES
+EXTRACTION_QUICK_REPLIES = MOD_02_EXTRACTION_QUICK_REPLIES
+MILK_LATTE_ART_QUICK_REPLIES = MOD_03_LATTE_ART_QUICK_REPLIES
+RECIPES_QUICK_REPLIES = MOD_04_RECIPES_QUICK_REPLIES
 
 # ==============================================================================
 # Contextual Dispatcher

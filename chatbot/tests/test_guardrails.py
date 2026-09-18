@@ -49,5 +49,31 @@ class TestGuardrailsAndCitations(unittest.TestCase):
         self.assertIn("หน้า 24", footer)
         self.assertIn("หน้า 35", footer)
 
+    def test_typo_sanitization(self):
+        dirty_text = "ชงเสร็จแล้ว พรอ้ มเสิรฟ์ ในแก้วเสริฟ พร้อมตกแต่งสวยงาม สกัดช็อค 90 มิลลิแปร"
+        cleaned = self.guardrail.sanitize_ocr_typos(dirty_text)
+        self.assertIn("พร้อมเสิร์ฟ", cleaned)
+        self.assertIn("แก้วเสิร์ฟ", cleaned)
+        self.assertIn("สกัดช็อต", cleaned)
+        self.assertIn("บาร์", cleaned)
+        self.assertNotIn("เสิรฟ์", cleaned)
+        self.assertNotIn("เสริฟ", cleaned)
+        self.assertNotIn("พรอ้ ม", cleaned)
+        self.assertNotIn("สกัดช็อค", cleaned)
+
+        orange_dirty = "ส่วนผสม: 1. น้ำ สมั 2. ถว้ ยตวง 3. ซอ้ นตกั 4. กาตม้ นน้ำรอ้ น 5. ถงุ 6. อุปกรณท์ 7. ใหเ้ขา้ กนั 8. เบอร์บั เบอรบ์ดใหล้ ะเอียด"
+        orange_cleaned = self.guardrail.sanitize_ocr_typos(orange_dirty)
+        self.assertIn("น้ำส้ม", orange_cleaned)
+        self.assertIn("ถ้วยตวง", orange_cleaned)
+        self.assertIn("ช้อนตัก", orange_cleaned)
+        self.assertIn("กาต้มน้ำร้อน", orange_cleaned)
+        self.assertIn("ถุง", orange_cleaned)
+        self.assertIn("อุปกรณ์ที่", orange_cleaned)
+        self.assertIn("ให้เข้ากัน", orange_cleaned)
+        self.assertIn("เบอร์บดให้ละเอียด", orange_cleaned)
+        self.assertNotIn("น้ำ สมั", orange_cleaned)
+        self.assertNotIn("ถว้ ย", orange_cleaned)
+        self.assertNotIn("ซอ้ น", orange_cleaned)
+
 if __name__ == "__main__":
     unittest.main()

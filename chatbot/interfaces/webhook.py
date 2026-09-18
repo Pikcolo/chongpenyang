@@ -179,7 +179,7 @@ def query_legacy():
 
 @app.route("/callback", methods=["POST"])
 def callback():
-    """LINE Messaging API webhook handler."""
+    """LINE Messaging API webhook handler with asynchronous event processing."""
     if not handler:
         return "LINE credentials not configured", 500
 
@@ -187,12 +187,23 @@ def callback():
     body = request.get_data(as_text=True)
 
     try:
-        handler.handle(body, signature)
+        events = handler.parser.parse(body, signature)
     except InvalidSignatureError:
         abort(400)
     except Exception as e:
-        print(f"Error handling webhook: {e}")
+        print(f"Error parsing webhook: {e}")
         abort(500)
+
+    # Process events in background thread to immediately return 200 OK to LINE/Cloudflare
+    import threading
+    def _async_process(parsed_events):
+        for event in parsed_events:
+            try:
+                handler.__call__(event)
+            except Exception as err:
+                print(f"⚠️ Error in async event handler: {err}")
+
+    threading.Thread(target=_async_process, args=(events,), daemon=True).start()
 
     return "OK"
 
@@ -231,8 +242,27 @@ if handler:
         if user_id:
             show_line_loading_animation(user_id, seconds=25)
 
+        import re
+
+        # Check if message contains question indicators
+        question_words = ["?", "คือ", "อะไร", "ใคร", "ที่ไหน", "เมื่อไหร่", "อย่างไร", "ทำไม", "เท่าไร", "เท่าใด", "สูตร", "วิธี", "ช่วย", "ทำยังไง", "ขอ", "แนะนำ", "ต่างกัน", "แก้อาการ", "แก้", "กี่", "ไหม", "มั้ย", "แชมป์", "ชนะ", "ลาย"]
+        has_question = any(qw in clean_text for qw in question_words) or len(clean_text) > 25
+
+        # Pure greeting: only if user is NOT asking a question and only saying hello
+        is_pure_greeting = False
+        if not has_question:
+            thai_greetings = ["สวัสดี", "สวัสดีครับ", "สวัสดีค่ะ", "หวัดดี", "หวัดดีครับ", "หวัดดีค่ะ", "ดีครับ", "ดีค่ะ", "ดีจ้า", "เริ่มต้น", "start", "เริ่ม"]
+            if clean_text in thai_greetings:
+                is_pure_greeting = True
+            elif re.fullmatch(r'(hi|hello|hey|greetings)[\s!.]*', clean_text):
+                is_pure_greeting = True
+
         # Intent A: Welcome Card & Table of Contents (5 Modules)
-        if any(w in clean_text for w in ["สารบัญ", "5 โมดูล", "ภาพรวมหลักสูตร", "คู่มือบาริสต้ามืออาชีพ", "โมดูล", "เริ่มต้น"]):
+        # Only trigger if user explicitly asks for table of contents, module overview, or pure greeting
+        is_toc_request = clean_text in ["สารบัญ", "5 โมดูล", "ภาพรวมหลักสูตร", "คู่มือบาริสต้ามืออาชีพ", "เริ่มต้น", "start", "help", "เมนูหลัก"] or \
+                         (not has_question and any(w in clean_text for w in ["ดูสารบัญ", "ขอสารบัญ", "สรุป 5 โมดูล", "ภาพรวมหลักสูตร", "เปิดเมนู", "สารบัญ 5 โมดูล"]))
+
+        if is_toc_request or is_pure_greeting:
             flex_content = create_welcome_flex()
             quick_reply = get_line_sdk_quick_reply(user_text, "สารบัญ 5 โมดูลหลักสูตรบาริสต้ามืออาชีพ")
             flex_msg = FlexSendMessage(
@@ -243,8 +273,11 @@ if handler:
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
-        # Intent B: Popular Drinks Carousel
-        if any(w in clean_text for w in ["เมนูเครื่องดื่ม", "แนะนำสูตรเมนู", "สูตรเมนูยอดนิยม", "carousel"]):
+        # Intent B: Popular Drinks Carousel (Only on explicit menu/carousel request)
+        is_carousel_request = clean_text in ["เมนูเครื่องดื่ม", "แนะนำสูตรเมนู", "สูตรเมนูยอดนิยม", "carousel"] or \
+                              (not has_question and any(w in clean_text for w in ["ดูเมนูเครื่องดื่ม", "ขอสูตรเมนูยอดนิยม", "สไลด์เมนู", "เมนูกาแฟยอดนิยม"]))
+
+        if is_carousel_request:
             flex_content = create_recipes_carousel_flex()
             quick_reply = get_line_sdk_quick_reply(user_text, "สูตรเมนูเครื่องดื่มยอดนิยมตามคู่มือ")
             flex_msg = FlexSendMessage(
@@ -255,8 +288,11 @@ if handler:
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
-        # Intent C: Extraction Diagnosis / Troubleshoot Card
-        if any(w in clean_text for w in ["วิเคราะห์รสชาติ", "แก้อาการ", "รสเปรี้ยวเกินไป", "ขมเกินไป", "under", "over"]):
+        # Intent C: Extraction Diagnosis / Troubleshoot Card (Only on explicit diagnose overview request)
+        is_troubleshoot_request = clean_text in ["วิเคราะห์รสชาติ", "แก้อาการ", "troubleshoot", "วินิจฉัยรสชาติ"] or \
+                                  (not has_question and any(w in clean_text for w in ["วิเคราะห์รสชาติกาแฟ", "การวินิจฉัยการสกัด", "การ์ดแก้อาการ"]))
+
+        if is_troubleshoot_request:
             flex_content = create_troubleshoot_flex()
             quick_reply = get_line_sdk_quick_reply(user_text, "วิเคราะห์รสชาติและแก้ไขการสกัด")
             flex_msg = FlexSendMessage(
@@ -267,23 +303,9 @@ if handler:
             line_bot_api.reply_message(event.reply_token, flex_msg)
             return
 
-        # Intent D: Standard RAG Question Answering
+        # Intent D: Standard RAG Question Answering (Always answer questions with RAG)
         output = rag_chain.answer_question(user_text, session_id=user_id)
         raw_answer = output["answer"]
-
-        # Format with official Barista card header for standard questions
-        is_greeting = any(w in clean_text for w in ["สวัสดี", "หวัดดี", "ดีครับ", "ดีค่ะ", "hello", "hi"])
-        if is_greeting:
-            # Send welcome flex card on friendly greetings
-            flex_content = create_welcome_flex()
-            quick_reply = get_line_sdk_quick_reply(user_text, raw_answer)
-            flex_msg = FlexSendMessage(
-                alt_text="☕ ยินดีต้อนรับสู่ Chongpenyang Barista AI",
-                contents=flex_content,
-                quick_reply=quick_reply
-            )
-            line_bot_api.reply_message(event.reply_token, flex_msg)
-            return
 
         if not output.get("guardrail_triggered", False):
             display_q = user_text if len(user_text) <= 50 else (user_text[:47] + "...")

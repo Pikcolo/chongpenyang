@@ -141,9 +141,15 @@ class GuardrailManager:
         cleaned = text
         # Correct pressure unit mistranslations
         cleaned = re.sub(r'\(?\s*90\s*[-–]?\s*100\s*มิลลิแปร?์?\s*\)?', '(9-10 บาร์)', cleaned)
-        cleaned = re.sub(r'มิลลิแปร?์', 'บาร์', cleaned)
+        cleaned = re.sub(r'มิลลิแปร?์?', 'บาร์', cleaned)
 
-        # Correct specific broken Thai words
+        # Correct specific broken Thai words and typos
+        cleaned = re.sub(r'เสิรฟ์|เสริฟ์|เสริฟ|เสิรฟ', 'เสิร์ฟ', cleaned)
+        cleaned = re.sub(r'พรอ้ ม', 'พร้อม', cleaned)
+        cleaned = re.sub(r'สกัดช็อค', 'สกัดช็อต', cleaned)
+        cleaned = re.sub(r'แทมปั(?:กาแฟ)?', 'แทมป์กาแฟ', cleaned)
+        cleaned = re.sub(r'พาสเจอร?์?ไรซ[์ส]', 'พาสเจอร์ไรซ์', cleaned)
+        cleaned = re.sub(r'ไซรปั', 'ไซรัป', cleaned)
         cleaned = re.sub(r'คาปชู ิโน', 'คาปูชิโน่', cleaned)
         cleaned = re.sub(r'มคั คีอาโต้', 'มัคคิอาโต้', cleaned)
         cleaned = re.sub(r'มอคคา\b', 'มอคค่า', cleaned)
@@ -152,6 +158,46 @@ class GuardrailManager:
         cleaned = re.sub(r'อเมริกำโน่', 'อเมริกาโน่', cleaned)
         cleaned = re.sub(r'([หนา|โฟมนม].*?)\b1\s*ชม\.', r'\1 1-2 ซม.', cleaned)
         cleaned = re.sub(r'\b1\s*ชม\.', '1-2 ซม.', cleaned)
+
+        # Beverages & Ingredients OCR typos
+        cleaned = re.sub(r'น้ำ\s*สมั|น้ำ\s*สม้|น\s*้าส้ม|น\s*้าสัม', 'น้ำส้ม', cleaned)
+        cleaned = re.sub(r'กาต้ม?\s*น?น้ำ\s*ร้อ?้?น|กาตม้\s*น?น้ำ\s*รอ้ น', 'กาต้มน้ำร้อน', cleaned)
+        cleaned = re.sub(r'กาตม้', 'กาต้ม', cleaned)
+        cleaned = re.sub(r'น\s*้าร้อน|น้ำรอ้ น', 'น้ำร้อน', cleaned)
+        cleaned = re.sub(r'น\s*้าผึ้ง', 'น้ำผึ้ง', cleaned)
+        cleaned = re.sub(r'น\s*้ามะนาว', 'น้ำมะนาว', cleaned)
+        cleaned = re.sub(r'น\s*้าแข็ง|นา\s*้\s*แข็ง|นา\s*้\s*แขง็', 'น้ำแข็ง', cleaned)
+        cleaned = re.sub(r'น\s*้าตาล', 'น้ำตาล', cleaned)
+        cleaned = re.sub(r'น\s*้ำ|นา\s*้', 'น้ำ', cleaned)
+
+        # Equipment & Utensils OCR typos
+        cleaned = re.sub(r'อุปกรณท์(?:\s*ที่)?|อุปกรณ์ท์(?:\s*ที่)?', 'อุปกรณ์ที่', cleaned)
+        cleaned = re.sub(r'อุปกรณ(?:\s*ที่)?(?=จำเป็น|ทำ|ชง|หลัก)', 'อุปกรณ์ที่', cleaned)
+        cleaned = re.sub(r'อุปกรณ\b', 'อุปกรณ์', cleaned)
+        cleaned = re.sub(r'อุปกรณ์์+', 'อุปกรณ์', cleaned)
+        cleaned = re.sub(r'อุปกรณ์ที่ที่', 'อุปกรณ์ที่', cleaned)
+        cleaned = re.sub(r'ถว้ ยตวง', 'ถ้วยตวง', cleaned)
+        cleaned = re.sub(r'ถว้ ยชง', 'ถ้วยชง', cleaned)
+        cleaned = re.sub(r'ถว้ ย', 'ถ้วย', cleaned)
+        cleaned = re.sub(r'ซอ้ นตกั|ซ้อนตกั|ซอ้ นตัก', 'ช้อนตัก', cleaned)
+        cleaned = re.sub(r'ซอ้ น', 'ช้อน', cleaned)
+        cleaned = re.sub(r'ใช้ช้\s*อ้\s*น', 'ใช้ช้อน', cleaned)
+        cleaned = re.sub(r'เครื่องช่งั', 'เครื่องชั่ง', cleaned)
+        cleaned = re.sub(r'ช่งั\s*ดจิ\s*ิตอล|ดจิ\s*ิตอล', 'ดิจิทัล', cleaned)
+
+        # Actions & Verbs OCR typos
+        cleaned = re.sub(r'นาเมล็ด', 'นำเมล็ด', cleaned)
+        cleaned = re.sub(r'ใหเ้ขา้ กนั|ใหเ้\s*ขา้\s*กนั', 'ให้เข้ากัน', cleaned)
+        cleaned = re.sub(r'ใหล้ ะเอียด', 'ให้ละเอียด', cleaned)
+        cleaned = re.sub(r'ละเฮียด', 'ละเอียด', cleaned)
+        cleaned = re.sub(r'เบอร์บั\s*เบอรบ์ด|เบอรบ์ด|เบอร์บั', 'เบอร์บด', cleaned)
+        cleaned = re.sub(r'ถงุ', 'ถุง', cleaned)
+        cleaned = re.sub(r'เพ่อื วอรม์|ไวเ้พ่อื วอรม์', 'ไว้เพื่อวอร์ม', cleaned)
+        cleaned = re.sub(r'เพ่อื', 'เพื่อ', cleaned)
+        cleaned = re.sub(r'ตกั', 'ตัก', cleaned)
+        cleaned = re.sub(r'ปรมาณ', 'ปริมาณ', cleaned)
+        cleaned = re.sub(r'ขนึ้', 'ขึ้น', cleaned)
+        cleaned = re.sub(r'เขม้', 'เข้ม', cleaned)
 
         return cleaned
 
